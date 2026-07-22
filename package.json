@@ -1,0 +1,9 @@
+{
+  "name": "shopify-bigcartel-sync",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Syncs sold-out/back-in-stock status from Shopify to Big Cartel",
+  "engines": {
+    "node": ">=18"
+  }
+}
