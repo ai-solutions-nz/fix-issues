@@ -1,0 +1,4 @@
+{
+  "_comment": "Map each Shopify product ID to its matching Big Cartel product ID. Big Cartel's API has no SKU field on product options, so this mapping has to be built by hand.",
+  "shopify_product_id_example": "bigcartel_product_id_example"
+}
