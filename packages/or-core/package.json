@@ -1,0 +1,19 @@
+{
+	"name": "@workspace/or-core",
+	"version": "0.1.0",
+	"private": true,
+	"license": "SEE LICENSE IN ../../LICENSE.md",
+	"type": "module",
+	"scripts": {
+		"check-types": "tsc --noEmit",
+		"test": "vitest run"
+	},
+	"exports": {
+		"./*": "./src/*.ts"
+	},
+	"devDependencies": {
+		"@types/node": "catalog:",
+		"typescript": "catalog:",
+		"vitest": "catalog:"
+	}
+}
