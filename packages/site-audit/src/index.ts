@@ -1,4 +1,5 @@
 export { auditSites } from "./audit";
+export type { ParsedPage } from "./parse/html";
 export type {
 	AuditBudget,
 	AuditOptions,

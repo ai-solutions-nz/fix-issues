@@ -1,4 +1,4 @@
-import { bigint, index, jsonb, pgTable, primaryKey, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, index, jsonb, pgTable, primaryKey, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { brands, prompts } from "./schema";
 import { organization, user } from "./schema-auth";
 
@@ -87,4 +87,64 @@ export const orMemberBrandAccess = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [primaryKey({ columns: [table.organizationId, table.userId, table.brandId] })],
+).enableRLS();
+
+/** One audit of a brand's site (and its competitors' sites): the Elmo site-audit report plus Online Reset findings. */
+export const orAuditRuns = pgTable(
+	"or_audit_runs",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		brandId: text("brand_id")
+			.references(() => brands.id, { onDelete: "cascade" })
+			.notNull(),
+		status: text("status").$type<"running" | "completed" | "failed">().notNull().default("running"),
+		siteReport: jsonb("site_report").$type<unknown>(),
+		findings: jsonb("findings").$type<unknown[]>().notNull().default([]),
+		scores: jsonb("scores").$type<unknown[]>().notNull().default([]),
+		brandCompleteness: real("brand_completeness"),
+		agentReadiness: real("agent_readiness"),
+		pagesAudited: text("pages_audited").array().notNull().default([]),
+		/** Title and headings of each audited page, enough to match questions to pages without re-crawling. */
+		pageOutline: jsonb("page_outline")
+			.$type<{ url: string; title: string; headings: { level: number; text: string }[] }[]>()
+			.notNull()
+			.default([]),
+		competitorPages: jsonb("competitor_pages").$type<Record<string, string[]>>().notNull().default({}),
+		error: text("error"),
+		startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+	},
+	(table) => [index("or_audit_runs_brand_started_idx").on(table.brandId, table.startedAt)],
+).enableRLS();
+
+/** Prioritised, evidence-linked recommendations. Recomputed in place; a human's status decision survives recomputation. */
+export const orOpportunities = pgTable(
+	"or_opportunities",
+	{
+		brandId: text("brand_id")
+			.references(() => brands.id, { onDelete: "cascade" })
+			.notNull(),
+		opportunityId: text("opportunity_id").notNull(),
+		type: text("type").notNull(),
+		title: text("title").notNull(),
+		rationale: text("rationale").notNull(),
+		recommendedAction: text("recommended_action").notNull(),
+		priority: real("priority").notNull(),
+		components: jsonb("components").$type<Record<string, number>>().notNull(),
+		evidence: jsonb("evidence")
+			.$type<{ runIds: string[]; findingIds: string[]; sources: string[]; promptIds: string[] }>()
+			.notNull(),
+		/** The collection method the visibility evidence came from. */
+		collectionMethod: text("collection_method"),
+		auditRunId: uuid("audit_run_id").references(() => orAuditRuns.id, { onDelete: "set null" }),
+		status: text("status").$type<"open" | "in_progress" | "done" | "dismissed">().notNull().default("open"),
+		/** False once a recomputation no longer produces it. */
+		current: boolean("current").notNull().default(true),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(table) => [primaryKey({ columns: [table.brandId, table.opportunityId] })],
 ).enableRLS();

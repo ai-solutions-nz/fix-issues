@@ -85,7 +85,8 @@
 		"olostep": "catalog:",
 		"pg": "catalog:",
 		"zod": "catalog:",
-		"@workspace/or-core": "workspace:*"
+		"@workspace/or-core": "workspace:*",
+		"@workspace/site-audit": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/pg": "catalog:",

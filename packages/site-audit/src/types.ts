@@ -1,3 +1,5 @@
+import type { ParsedPage } from "./parse/html";
+
 export const REPORT_SCHEMA_VERSION = 1;
 
 export const DEFAULT_USER_AGENT = "ElmoBot/1.0 (+https://www.elmohq.com/docs/user-guide/agent-readiness-audit#elmobot)";
@@ -42,6 +44,8 @@ export interface SiteReport {
 	summary: { pass: number; warn: number; fail: number; notChecked: number };
 	/** The site refused the audit (robots.txt or repeated errors), so its unchecked results count as failures. */
 	blockedAudit: boolean;
+	/** Online Reset: the parsed pages, when `includeParsedPages` was set. */
+	parsedPages?: ParsedPage[];
 	/** 0–100: a pass counts fully, a warning half, a failure nothing. Optional (`info`) results don't count, nor do unchecked ones unless the site blocked the audit. Null when nothing was scored. */
 	score: number | null;
 }
@@ -81,4 +85,6 @@ export interface AuditOptions {
 	onProgress?: (event: AuditProgress) => void;
 	/** Lets tests reach a local server. Never set this for user-supplied hosts. */
 	allowPrivateNetwork?: boolean;
+	/** Online Reset: return each site's parsed pages so further audits reuse this crawl. */
+	includeParsedPages?: boolean;
 }

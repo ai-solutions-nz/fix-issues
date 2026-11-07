@@ -103,6 +103,9 @@ export async function auditSites(options: AuditOptions): Promise<SiteAuditReport
 			summary: summarize(checks),
 			blockedAudit,
 			score: scoreChecks(checks, blockedAudit),
+			...(options.includeParsedPages
+				? { parsedPages: artifacts.pages.flatMap((page) => (page.parsed ? [page.parsed] : [])) }
+				: {}),
 		});
 	}
 
