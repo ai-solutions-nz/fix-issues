@@ -18,6 +18,8 @@ export default defineConfig({
 					name: "integration",
 					include: ["src/**/*.integration.test.ts"],
 					globalSetup: ["src/test/integration/global-setup.ts"],
+					// Suites truncate shared tables, so they must not overlap.
+					fileParallelism: false,
 					// Its own variable rather than DATABASE_URL, which in a dev checkout
 					// points at data these tests would write into.
 					env: { DATABASE_URL: process.env.TEST_DATABASE_URL ?? "" },

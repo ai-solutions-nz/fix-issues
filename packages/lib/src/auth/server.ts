@@ -20,7 +20,7 @@ import type { JWTPayload } from "jose";
 import { db } from "../db/db";
 import * as schema from "../db/schema";
 import { nativeClientRegistrationDefault } from "./native-client-registration";
-import { ac, adminRole, memberRole, ownerRole, userRole } from "./permissions";
+import { ac, adminRole, clientRole, memberRole, ownerRole, userRole } from "./permissions";
 
 export interface CreateAuthOptions {
 	databaseHooks?: BetterAuthOptions["databaseHooks"];
@@ -156,7 +156,7 @@ export function createAuth(options?: CreateAuthOptions) {
 		plugins: [
 			organization({
 				ac,
-				roles: { owner: ownerRole, admin: ownerRole, member: memberRole },
+				roles: { owner: ownerRole, admin: ownerRole, member: memberRole, client: clientRole },
 				...options?.organizationOptions,
 			}),
 			// `permissions` is server-only to the plugin, so scopes cannot be set

@@ -37,3 +37,21 @@ describe("organization roles", () => {
 		expect(memberRole.authorize({ apiKey: ["create"] }).success).toBe(false);
 	});
 });
+
+describe("Online Reset client role", () => {
+	it("can review and approve content but not change setup or publish", async () => {
+		const { clientRole } = await import("./permissions");
+		expect(clientRole.authorize({ approval: ["decide"] }).success).toBe(true);
+		expect(clientRole.authorize({ brand: ["read"] }).success).toBe(true);
+		expect(clientRole.authorize({ brand: ["update"] }).success).toBe(false);
+		expect(clientRole.authorize({ content: ["publish"] }).success).toBe(false);
+		for (const [action, permission] of Object.entries(ORGANIZATION_ACTIONS)) {
+			expect(clientRole.authorize(permission).success, action).toBe(false);
+		}
+	});
+
+	it("lets agency members publish approved content", () => {
+		expect(memberRole.authorize({ content: ["publish"] }).success).toBe(true);
+		expect(ownerRole.authorize({ approval: ["decide"] }).success).toBe(true);
+	});
+});

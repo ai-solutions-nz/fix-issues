@@ -57,7 +57,10 @@
 		"./rollups/dirty": "./src/rollups/dirty.ts",
 		"./rollups/citation-pages": "./src/rollups/citation-pages.ts",
 		"./rollups/fanout": "./src/rollups/fanout.ts",
-		"./mention-judge": "./src/mention-judge/index.ts"
+		"./mention-judge": "./src/mention-judge/index.ts",
+		"./db/schema-or": "./src/db/schema-or.ts",
+		"./db/tenant": "./src/db/tenant.ts",
+		"./or/*": "./src/or/*.ts"
 	},
 	"dependencies": {
 		"@ai-sdk/anthropic": "catalog:",

@@ -135,6 +135,18 @@ export const promptRuns = pgTable(
 		 * because nothing can re-derive it from `raw_output` yet.
 		 */
 		webQueries: text("web_queries").array().notNull().default([]),
+		/**
+		 * Online Reset evidence: how the answer was collected. Metrics never mix
+		 * methods (see packages/or-core/src/measurement.ts). "unknown" marks runs
+		 * stored before the column existed.
+		 */
+		collectionMethod: text("collection_method").notNull().default("unknown"),
+		/** The location the run asked for ({ country, region, city }), or null. */
+		locationRequested: jsonb("location_requested").$type<{ country: string; region?: string; city?: string } | null>(),
+		/** How the provider honoured it: "native" (API parameter), "prompt_text", or "none". */
+		locationApplied: text("location_applied"),
+		/** Online Reset measurement-rules version the run was collected under. */
+		methodologyVersion: text("methodology_version"),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => ({

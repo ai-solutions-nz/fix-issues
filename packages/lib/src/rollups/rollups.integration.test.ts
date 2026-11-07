@@ -1,7 +1,7 @@
 import { asc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { db } from "../db/db";
+import { db, fullSchema } from "../db/db";
 import type { DbConnection } from "../db/db-connection";
 import type { HeapWalkPosition } from "../db/heap-walk";
 import { insertRuns } from "../db/runs";
@@ -37,7 +37,7 @@ type TestDb = typeof db;
 /** Gives up on a lock quickly, which is how these tests make a rebuild fail. */
 const impatient = drizzle({
 	connection: { connectionString: process.env.DATABASE_URL, options: "-c lock_timeout=50" },
-	schema,
+	schema: fullSchema,
 });
 
 afterAll(async () => {
