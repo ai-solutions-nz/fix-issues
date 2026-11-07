@@ -2,21 +2,24 @@
 
 ## What this is
 
-Elmo is an open-source AI visibility platform (Answer Engine Optimization): it tracks how AI answer engines like ChatGPT, Claude, Perplexity, Gemini, and Google AI Overviews mention, cite, and describe brands. It is a **pnpm + Turborepo monorepo** on **Node.js 24** (enforced via `engines`), **TypeScript**, and **PostgreSQL**.
+Online Reset (AI Solutions NZ) is a white-labelled AEO/GEO platform: it measures how AI answer engines mention, cite and recommend a client's business, audits the client's site, finds evidence-backed opportunities, and runs an approval-gated optimisation workflow. It is a fork of Elmo (MIT) — a **pnpm + Turborepo monorepo** on **Node.js 24**, **TypeScript**, **PostgreSQL**. Read `BUILD-STATUS.md` first, then `docs/research/05-recommended-architecture.md`.
 
-- `apps/web` — product dashboard (TanStack Start + Vite, port 3000)
-- `apps/worker` — pg-boss background jobs (AI evaluations, citation tracking, reports)
-- `apps/www` — marketing site, docs, and blog (port 3001)
-- `apps/cli` — `@elmohq/cli`, the Docker Compose deployment CLI
-- `packages/lib` — shared logic and the Drizzle schema/migrations
-- `packages/ui` — shared shadcn-based UI components
-- `packages/docs` — user-facing docs content (MDX), rendered by `apps/www`
-- `packages/deployment` — deployment-mode config, per-mode auth hooks, cloud billing/email
-- `packages/config` — env validation and shared constants/types
-- `packages/api-spec` — OpenAPI spec
-- `e2e/` — Playwright end-to-end tests
+- `apps/web` — dashboard + API + MCP (TanStack Start, port 3000)
+- `apps/worker` — pg-boss background jobs
+- `apps/cli` — upstream deployment CLI (not used by Online Reset yet)
+- `packages/lib` — shared logic, Drizzle schema/migrations
+- `packages/or-core` — Online Reset domain logic (measurement rules, matcher, SoV, NZ geo, scoring)
+- `packages/ui`, `packages/config`, `packages/deployment`, `packages/api-spec`, `packages/og`, `packages/site-audit`
 
-Full setup instructions are in the developer guide at `packages/docs/content/docs/developer-guide/`.
+## Non-negotiable rules
+
+- Never commit credentials, API keys or customer data. Use `.env` (git-ignored); `.env.example` holds placeholders only.
+- Never call a paid provider in tests. Fixture providers are labelled `collection_method = fixture` and must never be shown or aggregated as live results.
+- Never aggregate metrics across different `collection_method` values.
+- Raw provider output (`prompt_runs.raw_output`) is immutable.
+- Nothing is published to a client system without a recorded approval; publishing is idempotent.
+- Code copied from another project keeps its licence header and is listed in `UPSTREAM.md` and `THIRD_PARTY_NOTICES.md`. Never copy GPL/AGPL/FSL/enterprise-licensed code.
+- Tenant data access from new code goes through `withTenant()` (database-enforced RLS).
 
 ## Commands
 
@@ -50,36 +53,3 @@ Before handing work back or opening a PR, run `pnpm lint` and get it passing; CI
 
 `.env` must exist at **both** the repo root and `apps/web/.env` (Vite reads its project root; the worker reads `apps/web/.env` via `--env-file`). Minimum for local mode: `DATABASE_URL`, `DEPLOYMENT_MODE=local`, `BETTER_AUTH_SECRET`, `ELMO_ENCRYPTION_KEY` (`openssl rand -base64 32`), `APP_URL`/`VITE_APP_URL`, `DISABLE_TELEMETRY=1`, and `SCRAPE_TARGETS` plus the keys of the providers it names. Env validation also requires one direct LLM key (`OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, or `MISTRAL_API_KEY`) for onboarding and the Opportunities report, and the worker needs `TYPESAFE_API_KEY`, or `OPENROUTER_API_KEY` to call Jev through OpenRouter (Jev judges mentions and sentiment). For UI-only work, `SCRAPE_TARGETS=stub:stub`, `ONBOARDING_LLM_TARGET=stub:stub` and `TYPESAFE_API_KEY=stub` need no keys at all.
 
-## Git workflow
-
-- Work happens in PRs against `main`.
-- Commit as you go: small, atomic commits that show real progress. Don't rewrite history (amend, rebase, force-push) to make it look tidy afterward.
-- Commit subjects are plain imperative sentences — no conventional-commit prefixes. Write `paginate top cited domains`, not `feat(web): paginate top cited domains`.
-- Don't bump package versions; releases go through Changesets.
-- Don't add coding-agent attribution (such as "Generated with …" lines or `Co-Authored-By` trailers) to commit messages or PR descriptions.
-
-## Private data
-
-- Unless explicitly authorized, never put identifying information or non-public stats into a PR description, commit message, issue or PR comment, or any committed text (code, comments, tests, fixtures, docs, changesets). This covers anything you get from MCP servers, databases, or APIs you've been given access to, including the GitHub API.
-- That includes conversion rates, customer or user names, emails, and domains, revenue and billing figures, cloud usage amounts, traffic numbers, names of private repositories, internal projects, services, or infrastructure, and any other non-public information. Describe the change in general terms or use made-up placeholder data instead.
-- This repo is public. Before running `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue`, or `git commit`, reread the text against this list and strip anything you learned while investigating that isn't already public. Notes from your investigation are the usual source of leaks.
-
-## Comments and docs
-
-- Adding code comments should be rare. Default to writing none; good names and clear code are the documentation.
-- Add a comment only when it explains a non-obvious **why** or context the code can't show (a workaround, a surprising constraint, an external quirk). Never restate what the code already says, and don't add section labels, docstrings that echo the signature, or narration of your change.
-- The same applies to docs and this file: never write down what's already derivable from the repo (what a file imports, what a script runs, how code is structured).
-- Don't describe prior behavior ("previously this did X") and don't reference GitHub issues or tickets in code — that context belongs in the commit message or PR.
-
-## Copy and UI text
-
-- Use APA Style title case for all non-prose text: titles, headings, buttons, links used as actions, nav items, tabs, form labels, table headers, and chart titles.
-- Sentences and prose stay in sentence case.
-- Elmo has no dark mode. Never design or implement anything for one.
-
-## Changesets
-
-- Add one only for **user-facing** changes (something an end user of the product would notice). Internal refactors, dependency bumps, and CI tweaks don't get one.
-- Keep it to one short, product-focused sentence; default to `patch`; scope it to the packages actually affected.
-- If a non-package directory (like `e2e/`) breaks Changesets tooling, fix the tooling configuration rather than inventing versions.
-- Never create a changeset for `apps/www`.

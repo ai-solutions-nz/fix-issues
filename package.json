@@ -1,5 +1,5 @@
 {
-  "name": "elmo",
+  "name": "online-reset-platform",
   "private": true,
   "license": "MIT",
   "packageManager": "pnpm@12.16.1",
@@ -18,9 +18,6 @@
     "elmo": "tsx apps/cli/src/index.ts",
     "cli:link": "npm unlink -g @elmohq/cli || true && pnpm -C apps/cli build && (cd apps/cli && npm link)",
     "cli:unlink": "npm unlink -g @elmohq/cli",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish",
     "test:e2e": "pnpm --filter e2e test:e2e",
     "test:e2e:cloud": "pnpm --filter e2e test:e2e:cloud",
     "test:e2e:whitelabel": "pnpm --filter e2e test:e2e:whitelabel",
@@ -35,7 +32,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
-    "@changesets/cli": "^3.0.3",
     "knip": "^6.44.1",
     "tsx": "catalog:",
     "turbo": "^2.11.10",

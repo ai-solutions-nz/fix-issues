@@ -34,15 +34,6 @@
         "@takumi-rs/core"
       ]
     },
-    "apps/www": {
-      "entry": [
-        "scripts/**"
-      ],
-      "ignoreDependencies": [
-        "shiki",
-        "@takumi-rs/core"
-      ]
-    },
     "apps/cli": {
       "ignoreDependencies": [
         "@ai-sdk/anthropic",

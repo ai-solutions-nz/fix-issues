@@ -5,8 +5,7 @@
 	"license": "MIT",
 	"scripts": {
 		"check-types": "tsc --noEmit",
-		"test": "vitest run",
-		"docs:fanout": "tsx scripts/write-fanout-docs.ts"
+		"test": "vitest run"
 	},
 	"exports": {
 		"./constants": "./src/constants.ts",

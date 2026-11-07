@@ -23,11 +23,10 @@ export type PublicClientConfig = Omit<ClientConfig, "branding"> & {
  * BrandingConfig.onboardingRedirectUrl is a function, so we strip it and send the
  * raw template string instead. The client can reconstruct the function if needed.
  */
-const POSTHOG_PUBLIC_KEY = "phc_Jhx9LnI9cTDFHpQmpOzJSDTW127qD9pFU65KRnYym6z";
-
 function resolvePosthogKey(): string | undefined {
 	if (process.env.DISABLE_TELEMETRY) return undefined;
-	return process.env.VITE_POSTHOG_KEY ?? POSTHOG_PUBLIC_KEY;
+	// Opt-in only: no analytics key is bundled.
+	return process.env.VITE_POSTHOG_KEY || undefined;
 }
 
 export function resolveCrispWebsiteId(): string | undefined {
