@@ -40,16 +40,12 @@ export function shareOfVoice(input: {
 	const competitorMentions = selected.reduce((sum, c) => sum + c.mentions, 0);
 	const denominator = input.brandMentions + competitorMentions;
 	const basis = input.tracked ? "tracked" : input.competitors.length > 0 ? "observed" : null;
-	const reason: ShareOfVoiceReason =
-		basis === null
-			? "no-competitors"
-			: !input.tracked && selected.length < MIN_OBSERVED_COMPETITORS
-				? "insufficient-observed"
-				: input.answeredResults === 0
-					? "no-answers"
-					: denominator === 0
-						? "no-mentions"
-						: null;
+	const reason = unavailableReason({
+		basis,
+		observedTooFew: !input.tracked && selected.length < MIN_OBSERVED_COMPETITORS,
+		answeredResults: input.answeredResults,
+		denominator,
+	});
 	return {
 		basis,
 		reason,
@@ -59,4 +55,17 @@ export function shareOfVoice(input: {
 		competitorMentions,
 		competitors: selected.map((c) => c.name),
 	};
+}
+
+function unavailableReason(f: {
+	basis: ShareOfVoice["basis"];
+	observedTooFew: boolean;
+	answeredResults: number;
+	denominator: number;
+}): ShareOfVoiceReason {
+	if (f.basis === null) return "no-competitors";
+	if (f.observedTooFew) return "insufficient-observed";
+	if (f.answeredResults === 0) return "no-answers";
+	if (f.denominator === 0) return "no-mentions";
+	return null;
 }
