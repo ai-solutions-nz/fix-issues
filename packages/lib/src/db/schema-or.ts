@@ -1,4 +1,16 @@
-import { bigint, boolean, index, jsonb, pgTable, primaryKey, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	bigint,
+	boolean,
+	index,
+	integer,
+	jsonb,
+	pgTable,
+	primaryKey,
+	real,
+	text,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { brands, prompts } from "./schema";
 import { organization, user } from "./schema-auth";
 
@@ -147,4 +159,123 @@ export const orOpportunities = pgTable(
 			.notNull(),
 	},
 	(table) => [primaryKey({ columns: [table.brandId, table.opportunityId] })],
+).enableRLS();
+
+/** A client's CMS. The credential is encrypted with the deployment key, bound to this row. */
+export const orCmsConnections = pgTable("or_cms_connections", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	brandId: text("brand_id")
+		.references(() => brands.id, { onDelete: "cascade" })
+		.notNull(),
+	kind: text("kind").$type<"wordpress" | "shopify">().notNull(),
+	label: text("label").notNull(),
+	baseUrl: text("base_url").notNull(),
+	/** WordPress user for the application password; null for Shopify. */
+	username: text("username"),
+	encryptedSecret: text("encrypted_secret").notNull(),
+	/** "publish" goes live; "draft" lands as a CMS draft for a final check in the CMS. */
+	publishStatus: text("publish_status").$type<"publish" | "draft">().notNull().default("draft"),
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}).enableRLS();
+
+export const orContentItems = pgTable(
+	"or_content_items",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		brandId: text("brand_id")
+			.references(() => brands.id, { onDelete: "cascade" })
+			.notNull(),
+		opportunityId: text("opportunity_id"),
+		kind: text("kind").$type<"service_page" | "schema_fix">().notNull(),
+		title: text("title").notNull(),
+		slug: text("slug").notNull(),
+		metaDescription: text("meta_description").notNull().default(""),
+		markdown: text("markdown").notNull().default(""),
+		html: text("html").notNull().default(""),
+		jsonLd: jsonb("json_ld").$type<Record<string, unknown> | null>(),
+		claims: jsonb("claims").$type<{ text: string; source: string }[]>().notNull().default([]),
+		research: jsonb("research").$type<Record<string, unknown>>().notNull().default({}),
+		qa: jsonb("qa").$type<{ id: string; ok: boolean; detail: string; blocking: boolean }[]>().notNull().default([]),
+		status: text("status")
+			.$type<
+				| "draft"
+				| "qa_failed"
+				| "ready_for_approval"
+				| "pending_approval"
+				| "approved"
+				| "rejected"
+				| "published"
+				| "verified"
+				| "rolled_back"
+			>()
+			.notNull()
+			.default("draft"),
+		version: integer("version").notNull().default(1),
+		contentHash: text("content_hash").notNull(),
+		createdBy: text("created_by"),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(table) => [index("or_content_items_brand_idx").on(table.brandId)],
+).enableRLS();
+
+export const orApprovals = pgTable(
+	"or_approvals",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		brandId: text("brand_id")
+			.references(() => brands.id, { onDelete: "cascade" })
+			.notNull(),
+		contentItemId: uuid("content_item_id")
+			.references(() => orContentItems.id, { onDelete: "cascade" })
+			.notNull(),
+		contentVersion: integer("content_version").notNull(),
+		/** The exact content approved; publishing requires the item still hashes to this. */
+		contentHash: text("content_hash").notNull(),
+		status: text("status").$type<"pending" | "approved" | "rejected" | "superseded">().notNull().default("pending"),
+		requestedBy: text("requested_by"),
+		decidedBy: text("decided_by"),
+		decidedRole: text("decided_role"),
+		comment: text("comment"),
+		requestedAt: timestamp("requested_at", { withTimezone: true }).defaultNow().notNull(),
+		decidedAt: timestamp("decided_at", { withTimezone: true }),
+	},
+	(table) => [index("or_approvals_brand_status_idx").on(table.brandId, table.status)],
+).enableRLS();
+
+export const orPublications = pgTable(
+	"or_publications",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		brandId: text("brand_id")
+			.references(() => brands.id, { onDelete: "cascade" })
+			.notNull(),
+		contentItemId: uuid("content_item_id")
+			.references(() => orContentItems.id, { onDelete: "cascade" })
+			.notNull(),
+		approvalId: uuid("approval_id")
+			.references(() => orApprovals.id)
+			.notNull(),
+		contentHash: text("content_hash").notNull(),
+		connectionId: uuid("connection_id").references(() => orCmsConnections.id, { onDelete: "set null" }),
+		/** One publication per approved content version: a retried or concurrent publish cannot duplicate it. */
+		idempotencyKey: text("idempotency_key").notNull().unique(),
+		status: text("status")
+			.$type<"publishing" | "published" | "failed" | "verified" | "verification_failed" | "rolled_back">()
+			.notNull()
+			.default("publishing"),
+		remoteId: text("remote_id"),
+		remoteUrl: text("remote_url"),
+		/** What the CMS held before we wrote to it, for rollback; null when we created a new page. */
+		snapshot: jsonb("snapshot").$type<Record<string, unknown> | null>(),
+		verification: jsonb("verification").$type<Record<string, unknown> | null>(),
+		retest: jsonb("retest").$type<Record<string, unknown> | null>(),
+		error: text("error"),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		publishedAt: timestamp("published_at", { withTimezone: true }),
+	},
+	(table) => [index("or_publications_brand_idx").on(table.brandId)],
 ).enableRLS();

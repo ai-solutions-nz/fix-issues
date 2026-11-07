@@ -22,3 +22,6 @@ Ported (and modified — translated from Go to TypeScript) in
 Copyright (c) 2026 Arber X and contributors. Licence: `licenses/canonry-MIT.txt`.
 Adapted in `packages/or-core/src/clustering.ts` and `packages/or-core/src/share-of-voice.ts`;
 request shapes for location-aware search tools followed in `packages/or-core/src/geo.ts`.
+
+Canonry's WordPress client (`packages/integration-wordpress/src/wordpress-client.ts`)
+is adapted in `packages/lib/src/or/publishing/wordpress.ts` (same MIT licence above).

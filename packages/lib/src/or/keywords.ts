@@ -57,17 +57,35 @@ export const dataforseoKeywords: KeywordProvider = {
 		const code = DATAFORSEO_COUNTRY_CODES[location.country];
 		if (code === undefined) throw new Error(`No DataForSEO location code for ${location.country}`);
 		const response = await createDfsLabsApi().googleKeywordIdeasLive([
-			new client.DataforseoLabsGoogleKeywordIdeasLiveRequestInfo({ keywords: seeds, location_code: code, language_code: "en", limit }),
+			new client.DataforseoLabsGoogleKeywordIdeasLiveRequestInfo({
+				keywords: seeds,
+				location_code: code,
+				language_code: "en",
+				limit,
+			}),
 		]);
 		const items = firstResult<{ items?: LabsItem[] }>(response)?.items ?? [];
 		return items.flatMap((i) =>
-			i.keyword ? [{ keyword: i.keyword, searchVolume: i.keyword_info?.search_volume ?? null, difficulty: i.keyword_properties?.keyword_difficulty ?? null }] : [],
+			i.keyword
+				? [
+						{
+							keyword: i.keyword,
+							searchVolume: i.keyword_info?.search_volume ?? null,
+							difficulty: i.keyword_properties?.keyword_difficulty ?? null,
+						},
+					]
+				: [],
 		);
 	},
 
 	async rankCheck(keyword, location, domain) {
 		const response = await createDfsSerpApi().googleOrganicLiveAdvanced([
-			new client.SerpGoogleOrganicLiveAdvancedRequestInfo({ keyword, ...dataForSeoLocation(location), language_code: "en", depth: 30 }),
+			new client.SerpGoogleOrganicLiveAdvancedRequestInfo({
+				keyword,
+				...dataForSeoLocation(location),
+				language_code: "en",
+				depth: 30,
+			}),
 		]);
 		const organic = (firstResult<{ items?: SerpItem[] }>(response)?.items ?? []).filter((i) => i.type === "organic");
 		const hit = organic.find((i) => i.domain && sameDomain(i.domain, domain));
@@ -103,6 +121,11 @@ export const fixtureKeywords: KeywordProvider = {
 	},
 	async rankCheck(keyword, _location, domain) {
 		const r = unit(`${keyword}|${domain}`);
-		return { keyword, position: r < 0.6 ? Math.ceil(r * 25) : null, url: r < 0.6 ? `https://${domain}/` : null, topDomains: [] };
+		return {
+			keyword,
+			position: r < 0.6 ? Math.ceil(r * 25) : null,
+			url: r < 0.6 ? `https://${domain}/` : null,
+			topDomains: [],
+		};
 	},
 };
