@@ -20,6 +20,7 @@ import {
 	requestStaleReprocesses,
 } from "./jobs/reprocess";
 import { configureMentionAnalyzer, mentionAnalyzer } from "./mention-judge";
+import { registerOnlineResetJobs } from "./or-jobs";
 import { initializePipeline } from "./rollups-startup";
 import { shutdownTelemetry } from "./telemetry";
 
@@ -160,6 +161,7 @@ async function main() {
 	await initializePipeline(boss);
 
 	await registerHandlers(boss);
+	await registerOnlineResetJobs(boss);
 	console.log("All handlers registered, worker is ready");
 
 	await requestUnjudgedRuns(db, boss, { days: 30, limit: 50_000 }).then(

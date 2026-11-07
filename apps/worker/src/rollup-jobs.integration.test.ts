@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { db } from "@workspace/lib/db/db";
+import { db, fullSchema } from "@workspace/lib/db/db";
 import { insertRuns, type NewRun } from "@workspace/lib/db/runs";
-import * as schema from "@workspace/lib/db/schema";
 import {
 	brands,
 	citations,
@@ -41,7 +40,7 @@ const B1 = new Date(B0.getTime() + BUCKET_MS);
 /** Gives up on a lock quickly, which is how these tests make a rebuild fail. */
 const impatient = drizzle({
 	connection: { connectionString: process.env.DATABASE_URL, options: "-c lock_timeout=50" },
-	schema,
+	schema: fullSchema,
 });
 
 interface Fixture {
