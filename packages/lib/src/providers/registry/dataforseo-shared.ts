@@ -69,6 +69,10 @@ export function createDfsSerpApi() {
 	return new client.SerpApi("https://api.dataforseo.com", { fetch: authFetch });
 }
 
+export function createDfsLabsApi() {
+	return new client.DataforseoLabsApi("https://api.dataforseo.com", { fetch: authFetch });
+}
+
 export function createDfsAiApi() {
 	return new client.AiOptimizationApi("https://api.dataforseo.com", { fetch: authFetch });
 }
