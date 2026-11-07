@@ -1,5 +1,6 @@
 import { anthropic, createAnthropic } from "@ai-sdk/anthropic";
 import Anthropic from "@anthropic-ai/sdk";
+import { anthropicUserLocation } from "@workspace/or-core/geo";
 import { getCredential } from "../../secrets";
 import {
 	ANTHROPIC_WEB_SEARCH_MAX_USES,
@@ -37,6 +38,7 @@ async function runAnthropic(prompt: string, model: string, options?: ProviderOpt
 			type: "web_search_20250305",
 			name: "web_search",
 			max_uses: ANTHROPIC_WEB_SEARCH_MAX_USES,
+			...(options.location ? { user_location: anthropicUserLocation(options.location) } : {}),
 		});
 	}
 
@@ -89,6 +91,7 @@ async function runAnthropic(prompt: string, model: string, options?: ProviderOpt
 		rawOutput: sanitizeForJson({ ...response, content: trimmedContent }),
 		webQueries,
 		modelVersion: model,
+		locationApplied: options?.location && options.webSearch ? "native" : "none",
 	};
 }
 

@@ -1,4 +1,5 @@
 import type { ModelConfig } from "@workspace/config/scrape-targets";
+import type { GeoTarget, LocationApplied } from "@workspace/or-core/geo";
 import type { z } from "zod";
 
 export type { ModelConfig };
@@ -8,11 +9,15 @@ export interface ScrapeResult {
 	rawOutput: unknown;
 	webQueries: string[];
 	modelVersion?: string;
+	/** Online Reset: how the requested location reached the engine. Omitted means "none". */
+	locationApplied?: LocationApplied;
 }
 
 export interface ProviderOptions {
 	webSearch?: boolean;
 	version?: string;
+	/** Online Reset: where the buyer is asking from. */
+	location?: GeoTarget;
 }
 
 export interface StructuredResearchOptions<T> {

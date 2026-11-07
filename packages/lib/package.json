@@ -84,7 +84,8 @@
 		"linkedom": "catalog:",
 		"olostep": "catalog:",
 		"pg": "catalog:",
-		"zod": "catalog:"
+		"zod": "catalog:",
+		"@workspace/or-core": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/pg": "catalog:",

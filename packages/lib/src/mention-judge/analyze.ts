@@ -6,6 +6,7 @@ import {
 	type Sentiment,
 	subjectFingerprint,
 } from "../mentions";
+import { deterministicAnalyzer } from "../or/deterministic-judge";
 import { type Cleaned, cleanAnswer, originalSpan } from "./clean";
 import {
 	adaptivePool,
@@ -274,6 +275,7 @@ export function createMentionAnalyzer(
 	apiKey: string | undefined,
 	openRouterKey: () => string | undefined,
 ): MentionAnalyzer {
+	if (apiKey?.trim() === "deterministic") return deterministicAnalyzer;
 	if (apiKey?.trim() === "stub") {
 		console.warn(
 			"[mention-judge] TYPESAFE_API_KEY=stub: judging from cue words, not Jev. For tests and development only.",
@@ -290,7 +292,10 @@ export function createMentionAnalyzer(
 			JEV_MODEL,
 		);
 	}
-	throw new Error(
-		"Elmo judges mentions and sentiment with Jev: set TYPESAFE_API_KEY, or OPENROUTER_API_KEY to call Jev through OpenRouter",
+	// Online Reset: with no paid judge configured, fall back to the deterministic
+	// text matcher instead of refusing to run. Sentiment is then not judged.
+	console.log(
+		"[mention-judge] No TYPESAFE_API_KEY or OPENROUTER_API_KEY: using the deterministic matcher (no sentiment).",
 	);
+	return deterministicAnalyzer;
 }

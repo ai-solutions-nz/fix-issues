@@ -163,9 +163,10 @@ describe("createMentionAnalyzer", () => {
 	const noOpenRouter = () => undefined;
 	const openRouter = () => "or-key";
 
-	it("refuses to run without a key, naming both that would do", () => {
-		expect(() => createMentionAnalyzer("", noOpenRouter)).toThrow(/TYPESAFE_API_KEY.*OPENROUTER_API_KEY/);
-		expect(() => createMentionAnalyzer("", () => "  ")).toThrow("OPENROUTER_API_KEY");
+	it("falls back to the deterministic matcher without a key (Online Reset)", () => {
+		expect(createMentionAnalyzer("", noOpenRouter).judgeVersion).toBe("or-deterministic-1");
+		expect(createMentionAnalyzer("", () => "  ").judgeVersion).toBe("or-deterministic-1");
+		expect(createMentionAnalyzer("deterministic", openRouter).judgeVersion).toBe("or-deterministic-1");
 	});
 
 	it("stamps the stub's judgements apart from Jev's, so a real key re-judges them", () => {

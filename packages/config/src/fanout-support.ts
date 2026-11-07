@@ -59,6 +59,7 @@ const FANOUT_SUPPORT: Record<string, FanoutSupport> = {
 
 	"*:openrouter": NEVER,
 	"*:stub": NEVER,
+	"*:fixture": NEVER,
 };
 
 export function getFanoutSupport(target: ModelConfig): FanoutSupport {

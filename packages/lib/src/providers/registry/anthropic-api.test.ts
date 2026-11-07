@@ -119,3 +119,12 @@ describe("anthropic-api web search handling", () => {
 		vi.useRealTimers();
 	});
 });
+
+describe("Online Reset location targeting", () => {
+	it("sends the buyer's city as the web search user_location", async () => {
+		const location = { country: "NZ", region: "Canterbury", city: "Christchurch", timezone: "Pacific/Auckland" };
+		const res = await anthropicApi.run("claude", "prompt", { webSearch: true, version: "claude-sonnet-5", location });
+		expect(sentArgs().tools[0].user_location).toEqual({ type: "approximate", ...location });
+		expect(res.locationApplied).toBe("native");
+	});
+});

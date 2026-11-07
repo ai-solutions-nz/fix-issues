@@ -1,4 +1,5 @@
 import { createOpenAI, openai } from "@ai-sdk/openai";
+import { openAiUserLocation } from "@workspace/or-core/geo";
 import { generateText, type InferToolOutput } from "ai";
 import { getCredential } from "../../secrets";
 import {
@@ -67,7 +68,12 @@ async function runOpenAI(prompt: string, model: string, options?: ProviderOption
 		toolChoice: webSearch ? "auto" : "none",
 		...(webSearch
 			? {
-					tools: { web_search: openai.tools.webSearch({ searchContextSize: OPENAI_WEB_SEARCH_CONTEXT_SIZE }) },
+					tools: {
+						web_search: openai.tools.webSearch({
+							searchContextSize: OPENAI_WEB_SEARCH_CONTEXT_SIZE,
+							...(options?.location ? { userLocation: openAiUserLocation(options.location) } : {}),
+						}),
+					},
 					providerOptions: { openai: { maxToolCalls: OPENAI_WEB_SEARCH_MAX_TOOL_CALLS } },
 				}
 			: {}),
@@ -88,6 +94,7 @@ async function runOpenAI(prompt: string, model: string, options?: ProviderOption
 		rawOutput,
 		webQueries: reportedWebQueries(webQueries, { webSearch: options?.webSearch ?? false }),
 		modelVersion: model,
+		locationApplied: options?.location && webSearch ? "native" : "none",
 	};
 }
 

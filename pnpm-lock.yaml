@@ -840,6 +840,9 @@ importers:
       '@workspace/config':
         specifier: workspace:*
         version: link:../config
+      '@workspace/or-core':
+        specifier: workspace:*
+        version: link:../or-core
       ai:
         specifier: 'catalog:'
         version: 7.0.159(zod@4.6.7)

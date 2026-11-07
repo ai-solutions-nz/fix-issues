@@ -1,3 +1,4 @@
+import { dataForSeoLocation, type GeoTarget } from "@workspace/or-core/geo";
 import * as client from "dataforseo-client";
 import {
 	extractCitationsFromDataforseoLlm,
@@ -23,6 +24,14 @@ import { type Attempt, retryTransient, sanitizeForJson } from "./scrape-shared";
 const SERP_MODELS = new Set(["google-ai-mode"]);
 
 /**
+ * Online Reset: the run's location as DataForSEO fields, defaulting to the
+ * upstream US code only when no location was requested.
+ */
+function dfsLocation(location?: GeoTarget): { location_code?: number; location_name?: string } {
+	return location ? dataForSeoLocation(location) : { location_code: DFS_LOCATION_CODE };
+}
+
+/**
  * LLM Responses API. ChatGPT and Gemini only come here when a target pins a
  * version slug; Perplexity has no scraper, so it always does.
  */
@@ -37,11 +46,11 @@ const LLM_MODELS: Record<string, { defaultModelName: string; call: keyof typeof 
 
 /** LLM Scraper API: the default route, since it drives the real consumer products. */
 const SCRAPER_CALLS = {
-	chatgpt: (api: client.AiOptimizationApi, prompt: string) =>
+	chatgpt: (api: client.AiOptimizationApi, prompt: string, location?: GeoTarget) =>
 		api.chatGptLlmScraperLiveAdvanced([
 			new client.AiOptimizationChatGptLlmScraperLiveAdvancedRequestInfo({
 				keyword: prompt,
-				location_code: DFS_LOCATION_CODE,
+				...dfsLocation(location),
 				language_code: DFS_LANGUAGE_CODE,
 				// ChatGPT decides per prompt whether to search; force it so a tracked
 				// run always reflects the browsing experience. Gemini always searches
@@ -49,11 +58,11 @@ const SCRAPER_CALLS = {
 				force_web_search: true,
 			}),
 		]),
-	gemini: (api: client.AiOptimizationApi, prompt: string) =>
+	gemini: (api: client.AiOptimizationApi, prompt: string, location?: GeoTarget) =>
 		api.geminiLlmScraperLiveAdvanced([
 			new client.AiOptimizationGeminiLlmScraperLiveAdvancedRequestInfo({
 				keyword: prompt,
-				location_code: DFS_LOCATION_CODE,
+				...dfsLocation(location),
 				language_code: DFS_LANGUAGE_CODE,
 			}),
 		]),
@@ -84,12 +93,12 @@ const LLM_CALLS = {
 		api.geminiLlmResponsesLive(body.map((b) => new client.AiOptimizationGeminiLlmResponsesLiveRequestInfo(b))),
 } as const;
 
-async function runGoogleAiMode(prompt: string): Promise<ScrapeResult> {
+async function runGoogleAiMode(prompt: string, location?: GeoTarget): Promise<ScrapeResult> {
 	assertPromptLength(prompt);
 	const api = createDfsSerpApi();
 	const requestInfo = new client.SerpGoogleAiModeLiveAdvancedRequestInfo({
 		keyword: prompt,
-		location_code: DFS_LOCATION_CODE,
+		...dfsLocation(location),
 		language_code: DFS_LANGUAGE_CODE,
 		depth: 10,
 	});
@@ -108,12 +117,12 @@ async function runGoogleAiMode(prompt: string): Promise<ScrapeResult> {
 	};
 }
 
-function runGoogleAiOverview(prompt: string): Promise<ScrapeResult> {
+function runGoogleAiOverview(prompt: string, location?: GeoTarget): Promise<ScrapeResult> {
 	assertPromptLength(prompt);
 	const api = createDfsSerpApi();
 	const requestInfo = new client.SerpGoogleOrganicLiveAdvancedRequestInfo({
 		keyword: prompt,
-		location_code: DFS_LOCATION_CODE,
+		...dfsLocation(location),
 		language_code: DFS_LANGUAGE_CODE,
 		depth: 10,
 		// AI Overviews are generated on demand; without this DataForSEO only
@@ -222,8 +231,12 @@ async function runLlmResponse(model: string, prompt: string, options?: ProviderO
 	};
 }
 
-async function runLlmScraper(model: keyof typeof SCRAPER_CALLS, prompt: string): Promise<ScrapeResult> {
-	const response = await SCRAPER_CALLS[model](createDfsAiApi(), prompt);
+async function runLlmScraper(
+	model: keyof typeof SCRAPER_CALLS,
+	prompt: string,
+	location?: GeoTarget,
+): Promise<ScrapeResult> {
+	const response = await SCRAPER_CALLS[model](createDfsAiApi(), prompt, location);
 	const result = dfsFirstResult<{ model?: string; fan_out_queries?: unknown }>(response);
 	const raw = sanitizeForJson(response);
 	const citations = extractCitationsFromDataforseoScraper(raw);
@@ -260,17 +273,23 @@ export const dataforseo: Provider = {
 
 	async run(model: string, prompt: string, options?: ProviderOptions): Promise<ScrapeResult> {
 		assertPromptLength(prompt);
+		const location = options?.location;
+		// The SERP and scraper endpoints take a location; the LLM Responses route does not (see runLlmResponse).
+		const located = (result: ScrapeResult): ScrapeResult => ({
+			...result,
+			locationApplied: location ? "native" : "none",
+		});
 		if (SERP_MODELS.has(model)) {
-			return runGoogleAiMode(prompt);
+			return located(await runGoogleAiMode(prompt, location));
 		}
 		if (model === AI_OVERVIEW_MODEL) {
-			return runGoogleAiOverview(prompt);
+			return located(await runGoogleAiOverview(prompt, location));
 		}
 		if (!options?.version && model in SCRAPER_CALLS) {
-			return runLlmScraper(model as keyof typeof SCRAPER_CALLS, prompt);
+			return located(await runLlmScraper(model as keyof typeof SCRAPER_CALLS, prompt, location));
 		}
 		if (LLM_MODELS[model]) {
-			return runLlmResponse(model, prompt, options);
+			return { ...(await runLlmResponse(model, prompt, options)), locationApplied: "none" };
 		}
 		throw new Error(`DataForSEO: unsupported model "${model}". Supported: ${[...SUPPORTED_MODELS].join(", ")}`);
 	},

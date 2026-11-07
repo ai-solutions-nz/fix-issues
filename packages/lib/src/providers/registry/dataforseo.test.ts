@@ -117,6 +117,18 @@ describe("dataforseo provider", () => {
 			search_results: [{ url: "https://example.com/not-cited", title: "Not cited" }],
 		};
 
+		it("asks DataForSEO from the buyer's NZ city when a location is set (Online Reset)", async () => {
+			dataforseoClient.chatGptLlmScraperLiveAdvanced.mockResolvedValueOnce(scraperResponse(CHATGPT_SCRAPE));
+			const result = await dataforseo.run("chatgpt", "best plumber Christchurch", {
+				webSearch: true,
+				location: { country: "NZ", region: "Canterbury", city: "Christchurch" },
+			});
+			const [payload] = dataforseoClient.chatGptLlmScraperLiveAdvanced.mock.calls[0];
+			expect(payload[0]).toMatchObject({ location_name: "Christchurch,Canterbury,New Zealand" });
+			expect(payload[0].location_code).toBeUndefined();
+			expect(result.locationApplied).toBe("native");
+		});
+
 		it("scrapes the live ChatGPT UI when no model is pinned, forcing web search", async () => {
 			dataforseoClient.chatGptLlmScraperLiveAdvanced.mockResolvedValueOnce(scraperResponse(CHATGPT_SCRAPE));
 

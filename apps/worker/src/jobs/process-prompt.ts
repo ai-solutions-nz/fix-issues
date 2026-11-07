@@ -5,6 +5,7 @@ import { getDefaultDelayHours } from "@workspace/lib/constants";
 import { db } from "@workspace/lib/db/db";
 import { type Brand, brands, promptRuns, prompts, usageEvents } from "@workspace/lib/db/schema";
 import { getOrgEntitlements } from "@workspace/lib/entitlements";
+import { brandGeoTarget, runEvidence } from "@workspace/lib/or/collection";
 import { getProvider, type ModelConfig, type Provider } from "@workspace/lib/providers";
 import { PROCESS_PROMPT_QUEUE, PROMPT_JOB_OPTIONS, promptSingletonKey } from "@workspace/lib/queues/prompt-jobs";
 import {
@@ -38,6 +39,8 @@ export interface ProcessPromptData {
 interface PromptContext {
 	prompt: typeof prompts.$inferSelect;
 	brand: Brand;
+	/** Online Reset: where the brand's buyers ask from (its profile), or null. */
+	location: Awaited<ReturnType<typeof brandGeoTarget>>;
 }
 
 async function scheduleNextRun(promptId: string, delayHours: number, consecutiveFailures: number): Promise<void> {
@@ -81,7 +84,7 @@ async function getPromptContext(promptId: string): Promise<PromptContext | null>
 		return null;
 	}
 
-	return { prompt, brand };
+	return { prompt, brand, location: await brandGeoTarget(db, brand.id) };
 }
 
 /** Outside cloud this reads nothing extra and uses the deployment's fixed run settings. */
@@ -184,6 +187,7 @@ async function runModelIteration({
 	config,
 	providerImpl,
 	runIndex,
+	location = null,
 }: {
 	promptId: string;
 	promptValue: string;
@@ -191,6 +195,7 @@ async function runModelIteration({
 	config: ModelConfig;
 	providerImpl: Provider;
 	runIndex: number;
+	location?: PromptContext["location"];
 }): Promise<void> {
 	const logPrefix = `[${config.model}_${runIndex}]`;
 
@@ -198,6 +203,7 @@ async function runModelIteration({
 		const result = await providerImpl.run(config.model, promptValue, {
 			webSearch: config.webSearch,
 			version: config.version,
+			...(location ? { location } : {}),
 		});
 
 		// `webQueries` is stored exactly as the provider reported it — engines do
@@ -221,6 +227,7 @@ async function runModelIteration({
 				webSearchEnabled: config.webSearch,
 				rawOutput,
 				webQueries,
+				...runEvidence(config, result, location),
 			})
 			.returning({ id: promptRuns.id });
 		console.log(`${logPrefix} Saved prompt run ${promptRunId}`);
@@ -322,7 +329,7 @@ async function runCycle(
 	context: PromptContext,
 	targets: TargetPlan[],
 ): Promise<{ attempted: number; succeeded: number }> {
-	const { prompt, brand } = context;
+	const { prompt, brand, location } = context;
 	const runPromises = targets.flatMap((target) => {
 		const providerImpl = getProvider(target.config.provider);
 		return Array.from({ length: target.replication }, (_, i) =>
@@ -333,6 +340,7 @@ async function runCycle(
 				config: target.config,
 				providerImpl,
 				runIndex: i + 1,
+				location,
 			}),
 		);
 	});

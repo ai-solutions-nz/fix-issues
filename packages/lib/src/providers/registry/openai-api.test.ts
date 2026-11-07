@@ -175,3 +175,26 @@ describe("openai-api web queries", () => {
 		expect(res.webQueries).toEqual([]);
 	});
 });
+
+describe("Online Reset location targeting", () => {
+	const christchurch = { country: "NZ", region: "Canterbury", city: "Christchurch", timezone: "Pacific/Auckland" };
+
+	it("sends the buyer's city as the web search user_location", async () => {
+		const res = await openaiApi.run("chatgpt", "prompt", {
+			webSearch: true,
+			version: "gpt-5-mini",
+			location: christchurch,
+		});
+		expect(sentArgs().tools.web_search.args.userLocation).toEqual({ type: "approximate", ...christchurch });
+		expect(res.locationApplied).toBe("native");
+	});
+
+	it("reports the location as not applied when web search is off", async () => {
+		const res = await openaiApi.run("chatgpt", "prompt", {
+			webSearch: false,
+			version: "gpt-5-mini",
+			location: christchurch,
+		});
+		expect(res.locationApplied).toBe("none");
+	});
+});
