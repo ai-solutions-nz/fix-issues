@@ -54,11 +54,19 @@ export function generateBuyerQuestions(ctx: BusinessContext): BuyerQuestion[] {
 	add(`How do I find a trustworthy ${t} in ${city}?`, "trust");
 	add(`Which ${ts} in ${city} have the best reviews?`, "trust");
 	add(`What should I check before hiring a ${t} in New Zealand?`, "trust");
+	add(`What do customers say about ${ts} in ${city}?`, "trust");
+	add(`How quickly can a ${t} come out in ${city}?`, "urgent");
+	add(`Do any ${ts} in ${city} offer weekend call-outs?`, "urgent");
+	add(`Recommend a ${t} for a small business in ${city}`, "discovery");
+	add(`Which ${ts} in ${city} are licensed for gas work?`, "trust");
+	add(`Can a ${t} in ${city} help with a leaking roof gutter or downpipe?`, "service");
 	for (const service of ctx.services.slice(0, 6)) {
 		add(`Who does ${service.toLowerCase()} in ${city}?`, "service");
 		add(`Best company for ${service.toLowerCase()} in ${city}`, "service");
 	}
-	for (const suburb of (ctx.suburbs ?? []).slice(0, 4)) add(`${t} near ${suburb}, ${city}`, "local");
+	for (const service of ctx.services.slice(0, 3))
+		add(`How much does ${service.toLowerCase()} cost in ${city}?`, "price");
+	for (const suburb of (ctx.suburbs ?? []).slice(0, 6)) add(`${t} near ${suburb}, ${city}`, "local");
 	for (const competitor of ctx.competitors.slice(0, 3))
 		add(`Is ${competitor} a good ${t} in ${city}? What are the alternatives?`, "comparison");
 	add(`What is ${ctx.brand} like as a ${t} in ${city}?`, "brand");

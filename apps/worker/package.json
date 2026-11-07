@@ -9,7 +9,8 @@
 		"build": "tsc -p tsconfig.json",
 		"check-types": "tsc --noEmit",
 		"test": "vitest run --project=unit",
-		"test:integration": "vitest run --project=integration"
+		"test:integration": "vitest run --project=integration",
+		"or:demo": "tsx scripts/or-demo.ts"
 	},
 	"dependencies": {
 		"@sentry/node": "^11.10.0",

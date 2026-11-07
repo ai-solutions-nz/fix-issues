@@ -39,7 +39,7 @@ export const DEMO_CONTEXT: BusinessContext = {
 	trade: "plumber",
 	services: [...DEMO_BUSINESS.services],
 	city: DEMO_BUSINESS.city,
-	suburbs: [...DEMO_BUSINESS.serviceAreas.slice(0, 4)],
+	suburbs: [...DEMO_BUSINESS.serviceAreas],
 	competitors: DEMO_COMPETITORS.map((c) => c.name),
 };
 

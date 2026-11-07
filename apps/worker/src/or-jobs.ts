@@ -4,11 +4,21 @@ import { orBrandProfiles } from "@workspace/lib/db/schema-or";
 import { refreshOpportunities, runBrandAudit } from "@workspace/lib/or/audit-service";
 import { eq } from "drizzle-orm";
 import type { Job, PgBoss } from "pg-boss";
+import { runPromptNow } from "./jobs/process-prompt";
 
 /** Online Reset background jobs: weekly site audits and opportunity refreshes for every profiled brand. */
 export const OR_AUDIT_SWEEP_QUEUE = "or-audit-sweep";
 export const OR_BRAND_AUDIT_QUEUE = "or-brand-audit";
 export const OR_FAILED_QUEUE = "or-failed";
+export const OR_RETEST_QUEUE = "or-retest";
+
+export interface RetestData {
+	promptIds: string[];
+}
+
+export async function retestJob(jobs: Job<RetestData>[]): Promise<void> {
+	for (const job of jobs) for (const promptId of job.data.promptIds) await runPromptNow(promptId);
+}
 
 export interface BrandAuditData {
 	brandId: string;
@@ -51,6 +61,14 @@ export async function registerOnlineResetJobs(boss: PgBoss): Promise<void> {
 		expireInSeconds: 60 * 30,
 		deadLetter: OR_FAILED_QUEUE,
 	});
+	await boss.createQueue(OR_RETEST_QUEUE, {
+		retryLimit: 2,
+		retryDelay: 120,
+		retryBackoff: true,
+		expireInSeconds: 60 * 30,
+		deadLetter: OR_FAILED_QUEUE,
+	});
+	await boss.work<RetestData>(OR_RETEST_QUEUE, { localConcurrency: 1 }, retestJob);
 	// Monday 03:17 New Zealand time, off the hour so it does not pile onto other jobs.
 	await boss.schedule(
 		OR_AUDIT_SWEEP_QUEUE,

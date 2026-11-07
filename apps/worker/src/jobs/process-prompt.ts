@@ -414,3 +414,25 @@ export async function processPromptJob(jobs: Job<ProcessPromptData>[]): Promise<
 		await processPrompt(job.data.promptId, scrapeConfigs, job.data.consecutiveFailures ?? 0);
 	}
 }
+
+/**
+ * Online Reset retest: run a prompt's planned targets now, outside its cadence,
+ * after a change was published. Same plan, providers and storage as a scheduled
+ * cycle, and still refused when the organization is over its daily ceiling.
+ * It does not reschedule; the regular cycle continues as before.
+ */
+export async function runPromptNow(
+	promptId: string,
+): Promise<{ attempted: number; succeeded: number; skipped?: string }> {
+	const scrapeConfigs = parseScrapeTargets(process.env.SCRAPE_TARGETS);
+	const context = await getPromptContext(promptId);
+	if (!context) return { attempted: 0, succeeded: 0, skipped: "prompt-gone" };
+	const { plan, entitlements } = await resolvePlanForPrompt(context, scrapeConfigs);
+	const ceiling = dailyRunCeiling(entitlements);
+	if (ceiling !== null && (await isOrgOverDailyCeiling(context.brand.organizationId, ceiling))) {
+		reportCeilingHit(context.brand.organizationId, ceiling);
+		return { attempted: 0, succeeded: 0, skipped: "daily-ceiling" };
+	}
+	if (plan.targets.length === 0) return { attempted: 0, succeeded: 0, skipped: "no-targets" };
+	return runCycle(context, plan.targets);
+}

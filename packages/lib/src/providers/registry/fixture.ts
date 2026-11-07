@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import type { Provider, ProviderOptions, ScrapeResult } from "../types";
 
 /**
@@ -18,12 +18,14 @@ interface FixtureAnswer {
 
 type FixtureFile = { answers: Record<string, Record<string, FixtureAnswer>> };
 
-let cache: { path: string; data: FixtureFile } | null = null;
+let cache: { path: string; mtimeMs: number; data: FixtureFile } | null = null;
 
 function loadFixtures(): FixtureFile {
 	const path = process.env.OR_FIXTURE_ANSWERS_FILE;
 	if (!path) return { answers: {} };
-	if (cache?.path !== path) cache = { path, data: JSON.parse(readFileSync(path, "utf8")) as FixtureFile };
+	const { mtimeMs } = statSync(path);
+	if (cache?.path !== path || cache.mtimeMs !== mtimeMs)
+		cache = { path, mtimeMs, data: JSON.parse(readFileSync(path, "utf8")) as FixtureFile };
 	return cache.data;
 }
 

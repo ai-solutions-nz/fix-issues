@@ -71,6 +71,19 @@ function topicFor(opportunityTitle: string, questions: string[], services: strin
 	);
 }
 
+async function promptsAbout(conn: DbConnection, brandId: string, topic: string): Promise<string[]> {
+	const words = topic
+		.toLowerCase()
+		.split(/[^\p{L}\p{N}]+/u)
+		.filter((w) => w.length > 3);
+	if (words.length === 0) return [];
+	const rows = await conn
+		.select({ id: prompts.id, value: prompts.value })
+		.from(prompts)
+		.where(eq(prompts.brandId, brandId));
+	return rows.filter((r) => words.every((w) => r.value.toLowerCase().includes(w))).map((r) => r.id);
+}
+
 /** Steps 1–4: turn an opportunity into a researched, QA-checked draft. */
 export async function startFromOpportunity(conn: DbConnection, brandId: string, opportunityId: string, actor: Actor) {
 	requirePermission(actor, { content: ["create"] }, "create content");
@@ -81,7 +94,10 @@ export async function startFromOpportunity(conn: DbConnection, brandId: string, 
 		.limit(1);
 	if (!opp) throw new Error("Opportunity not found");
 	const { brand, facts } = await brandContext(conn, brandId);
-	const promptIds = opp.evidence.promptIds;
+	// A finding-based opportunity carries no questions of its own; link the tracked questions about its topic so the retest measures it.
+	const promptIds = opp.evidence.promptIds.length
+		? opp.evidence.promptIds
+		: await promptsAbout(conn, brandId, topicFor(opp.title, [], facts.services));
 	const questions = promptIds.length
 		? (await conn.select({ value: prompts.value }).from(prompts).where(inArray(prompts.id, promptIds))).map(
 				(p) => p.value,
@@ -98,6 +114,7 @@ export async function startFromOpportunity(conn: DbConnection, brandId: string, 
 		citedSources: [...new Set([...runs.flatMap((r) => r.citations.map((c) => c.domain)), ...opp.evidence.sources])],
 		findings: opp.evidence.findingIds,
 	};
+	const evidence = { ...opp.evidence, promptIds };
 	const draft: Draft =
 		opp.type === "technical_fix" && opp.evidence.findingIds.some((f) => f.startsWith("schema."))
 			? draftSchemaFix(facts, [opp.rationale])
@@ -116,7 +133,7 @@ export async function startFromOpportunity(conn: DbConnection, brandId: string, 
 			html: draft.html,
 			jsonLd: draft.jsonLd,
 			claims: draft.claims,
-			research: { ...brief, evidence: opp.evidence, collectionMethod: opp.collectionMethod },
+			research: { ...brief, evidence, collectionMethod: opp.collectionMethod },
 			qa,
 			status: qaPassed(qa) ? "ready_for_approval" : "qa_failed",
 			contentHash: contentHash(draft),
