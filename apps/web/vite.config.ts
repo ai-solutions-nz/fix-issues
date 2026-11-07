@@ -12,6 +12,8 @@ import pkg from "./package.json" with { type: "json" };
 const tslibEsm = fileURLToPath(import.meta.resolve("tslib/tslib.es6.mjs"));
 
 export default defineConfig({
+	// linkedom is server-only (site audits, website excerpts); pre-bundling it for the browser fails on its CSSOM import.
+	optimizeDeps: { exclude: ["linkedom"] },
 	build: {
 		sourcemap: "hidden",
 	},

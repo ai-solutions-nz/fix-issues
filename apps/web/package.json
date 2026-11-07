@@ -62,7 +62,8 @@
 		"tslib": "catalog:",
 		"tw-animate-css": "catalog:",
 		"uuid": "^14.0.3",
-		"zod": "catalog:"
+		"zod": "catalog:",
+		"@workspace/or-core": "workspace:*"
 	},
 	"devDependencies": {
 		"@storybook/addon-vitest": "^10.6.5",

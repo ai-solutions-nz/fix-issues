@@ -1,5 +1,5 @@
 /** Whitelabel never falls back to these; it must set its own branding. */
-export const DEFAULT_APP_NAME = "Elmo";
+export const DEFAULT_APP_NAME = "Online Reset";
 export const DEFAULT_APP_ICON = "/icons/elmo-icon.svg";
 export const DEFAULT_APP_URL = "http://localhost:3000/";
 

@@ -68,160 +68,20 @@ const SELF_HOSTED_PITCH: Pitch = {
 
 type SalesPanelVariant = "cloud" | "self-hosted";
 
-export function SalesPanel({ variant, source }: { variant: SalesPanelVariant; source: ReferralSource }) {
-	const pitch = variant === "cloud" ? CLOUD_PITCH : SELF_HOSTED_PITCH;
-
+/** Online Reset: a neutral product panel in place of the upstream marketing (testimonials, cloud upsell). */
+export function SalesPanel(_props: { variant: SalesPanelVariant; source: ReferralSource }) {
 	return (
-		<div className="flex flex-1 flex-col justify-between gap-8">
-			<h2 className="text-3xl font-semibold leading-[1.1] tracking-tight text-balance">{pitch.headline}</h2>
-
-			<ul className="space-y-2.5">
-				{pitch.bullets.map((bullet) => (
-					<li key={bullet.text} className="flex items-start gap-2.5 text-sm">
-						<IconCheck className="mt-0.5 size-4 shrink-0 text-primary" />
-						{bullet.href ? (
-							<a
-								href={bullet.href}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="underline underline-offset-2 hover:opacity-80"
-							>
-								{bullet.text}
-							</a>
-						) : (
-							<span>{bullet.text}</span>
-						)}
-					</li>
-				))}
-			</ul>
-
-			{/* After our own claims, not before: a customer backing them up reads as
-			    corroboration, where opening with it reads as decoration. */}
-			<Quote />
-
-			<EngineStrip />
-
-			<OfferCard
-				question={variant === "self-hosted" ? "Don't want to self-host?" : "Try before you buy?"}
-				offer={variant === "self-hosted" ? cloudOffer(source) : demoOffer(source)}
-			/>
-		</div>
-	);
-}
-
-/** The coverage claim, spelled out. Names sit beside logos because three Google surfaces share a mark. */
-function EngineStrip() {
-	return (
-		<div>
-			<p className="font-mono text-[10px] uppercase leading-none tracking-[0.2em] text-muted-foreground">Tracking</p>
-			<ul className="mt-3 flex flex-wrap gap-1.5">
-				{ENGINES.map((engine) => (
-					<li
-						key={engine.model}
-						className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2 py-1 text-[11px] leading-none"
-					>
-						<ModelIcon iconId={engine.iconId} className="size-3 shrink-0 text-muted-foreground" />
-						{engine.label}
-					</li>
-				))}
+		<div className="flex h-full flex-col justify-center gap-6 px-10">
+			<h2 className="text-3xl font-semibold tracking-tight">Your AI Online Performance Partner</h2>
+			<ul className="space-y-3 text-sm text-muted-foreground">
+				<li>See how AI engines answer your buyers' questions, city by city.</li>
+				<li>Every figure links to the stored answer it came from.</li>
+				<li>Nothing is published to your website without your approval.</li>
 			</ul>
 		</div>
 	);
 }
 
-interface Offer {
-	label: string;
-	href: string;
-	icon: typeof IconEye;
-	/** Somewhere to look around rather than a conversion — worth keeping this page open for. */
-	newTab?: boolean;
-}
-
-const demoOffer = (source: ReferralSource): Offer => ({
-	label: "View Live Demo",
-	href: demoSiteUrl(source),
-	icon: IconEye,
-	newTab: true,
-});
-
-const cloudOffer = (source: ReferralSource): Offer => ({
-	label: "Try Elmo Cloud",
-	href: cloudSignupUrl(source),
-	icon: IconCloud,
-});
-
-/**
- * The secondary ask, in whichever form the deployment calls for: a way to see
- * Elmo before signing up, or the managed option for someone already running it.
- *
- * One way out, not a menu. The question and its answer are a single exchange,
- * so they share a line — the question anchored left, the answer right — and
- * wrap together when the panel is too narrow to hold both.
- */
-function OfferCard({ question, offer, className = "" }: { question: string; offer: Offer; className?: string }) {
-	return (
-		<div
-			className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-lg border bg-card p-5 ${className}`}
-		>
-			<h3 className="text-sm font-semibold">{question}</h3>
-			<a
-				href={offer.href}
-				className={cn(
-					buttonVariants({ variant: "ghost", size: "sm" }),
-					"bg-accent text-accent-foreground hover:underline",
-				)}
-				{...(offer.newTab ? { target: "_blank", rel: "noopener" } : {})}
-			>
-				<offer.icon className="size-4" />
-				{offer.label}
-			</a>
-		</div>
-	);
-}
-
-function Quote() {
-	const quote = CUSTOMER_QUOTES.speakeasy;
-	return (
-		<figure className="rounded-lg border bg-card p-5">
-			<blockquote className="text-pretty text-sm font-medium leading-relaxed">“{quote.quote}”</blockquote>
-			<figcaption className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-				<span className="font-semibold text-foreground">{quote.author}</span>
-				<span>at</span>
-				<a
-					href={quote.companyUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					aria-label={quote.company}
-					className="inline-flex items-center text-foreground transition-opacity hover:opacity-80"
-				>
-					{quote.mark}
-				</a>
-			</figcaption>
-		</figure>
-	);
-}
-
-/**
- * The bottom of the form column: where to read more on the left, and the G2
- * rating in the corner. The rating doesn't link out — this is the one page
- * where sending someone away costs a signup.
- */
-export function SalesFooterLinks({ source }: { source: ReferralSource }): ReactNode {
-	const linkClass = "hover:text-foreground";
-	return (
-		<div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2">
-			<p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-				<a href={marketingUrl("/docs", source)} className={linkClass}>
-					Docs
-				</a>
-				<a href={cloudPricingUrl(source)} className={linkClass}>
-					Pricing
-				</a>
-				<a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>
-					GitHub
-				</a>
-			</p>
-			<G2Stars />
-		</div>
-	);
+export function SalesFooterLinks(_props: { source: ReferralSource }): ReactNode {
+	return null;
 }

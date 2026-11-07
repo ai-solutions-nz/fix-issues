@@ -1,3 +1,4 @@
+import { DEFAULT_APP_NAME } from "@workspace/config/constants";
 import { routeSubjects } from "@/lib/route-subject";
 
 interface RouteMatchContext {
@@ -9,7 +10,7 @@ interface RouteMatchContext {
 }
 
 export function getAppName(match: RouteMatchContext): string {
-	return match.context?.clientConfig?.branding?.name || "Elmo";
+	return match.context?.clientConfig?.branding?.name || DEFAULT_APP_NAME;
 }
 
 export function buildTitle(pageName: string, opts: { appName: string; subject?: string }): string {

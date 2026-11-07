@@ -508,6 +508,9 @@ importers:
       '@workspace/og':
         specifier: workspace:*
         version: link:../../packages/og
+      '@workspace/or-core':
+        specifier: workspace:*
+        version: link:../../packages/or-core
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui

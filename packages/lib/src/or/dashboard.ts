@@ -3,7 +3,14 @@ import { analyseAnswer } from "@workspace/or-core/visibility";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { DbConnection } from "../db/db-connection";
 import { brands, citations, promptRuns, prompts, runExtractions } from "../db/schema";
-import { orApprovals, orAuditRuns, orContentItems, orOpportunities, orPublications } from "../db/schema-or";
+import {
+	orApprovals,
+	orAuditRuns,
+	orCmsConnections,
+	orContentItems,
+	orOpportunities,
+	orPublications,
+} from "../db/schema-or";
 import { loadSubjects, type MethodReport, visibilityReport } from "./visibility-service";
 
 export interface DashboardData {
@@ -20,6 +27,7 @@ export interface DashboardData {
 		"id" | "title" | "kind" | "status" | "version" | "qa" | "opportunityId" | "updatedAt"
 	>[];
 	approvals: (typeof orApprovals.$inferSelect)[];
+	connections: { id: string; label: string; kind: string; baseUrl: string; publishStatus: string }[];
 	publications: Pick<
 		typeof orPublications.$inferSelect,
 		"id" | "contentItemId" | "status" | "remoteUrl" | "publishedAt" | "verification" | "retest"
@@ -86,6 +94,16 @@ export async function dashboardData(
 			.from(orApprovals)
 			.where(eq(orApprovals.brandId, brandId))
 			.orderBy(desc(orApprovals.requestedAt)),
+		connections: await conn
+			.select({
+				id: orCmsConnections.id,
+				label: orCmsConnections.label,
+				kind: orCmsConnections.kind,
+				baseUrl: orCmsConnections.baseUrl,
+				publishStatus: orCmsConnections.publishStatus,
+			})
+			.from(orCmsConnections)
+			.where(eq(orCmsConnections.brandId, brandId)),
 		publications: await conn
 			.select({
 				id: orPublications.id,

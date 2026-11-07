@@ -88,6 +88,7 @@ function brandGroups(organization: OrganizationSummary, brand: BrandWithPrompts)
 	const params = brandLinkParams(organization, brand);
 	const dashboard: NavItem[] = [
 		{ title: "Overview", link: { to: "/app/org/$org/brand/$brand", params }, icon: IconDashboard, exact: true },
+		{ title: "AI Performance", link: { to: "/app/org/$org/brand/$brand/online-reset", params }, icon: IconTarget },
 	];
 
 	if (brand.onboarded) {
