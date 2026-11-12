@@ -92,6 +92,21 @@ jobs:
       - name: Unit tests
         run: pnpm turbo test
 
+      # Online Reset: the suites run as the app would in production, a
+      # NOSUPERUSER, NOBYPASSRLS login that owns the database and whose only
+      # role grant is membership of or_tenant. A superuser would pass the
+      # isolation tests without proving the grants. Test-only password.
+      - name: Create the non-superuser app login
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE or_app LOGIN PASSWORD 'or_app' NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB;
+          CREATE ROLE or_tenant NOLOGIN NOBYPASSRLS;
+          GRANT or_tenant TO or_app;
+          ALTER DATABASE elmo_test OWNER TO or_app;
+          SQL
+
       # One package at a time: the lib suite truncates tables the others write to.
       - name: Integration tests
         run: |
@@ -99,7 +114,7 @@ jobs:
           pnpm -C apps/worker test:integration
           pnpm -C packages/lib test:integration
         env:
-          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/elmo_test
+          TEST_DATABASE_URL: postgres://or_app:or_app@localhost:5432/elmo_test
           # Off UTC on purpose: a timestamp that loses its zone between Postgres
           # and JS only reads wrong on a host that isn't in UTC.
           TZ: America/Los_Angeles

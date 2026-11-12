@@ -1,12 +1,28 @@
 import "../instrument.server.mjs";
 import { wrapFetchWithSentry } from "@sentry/tanstackstart-react";
 import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
+import { assertTenantRoleReady } from "@workspace/lib/db/role-check";
 import { startCredentialRefresh } from "@workspace/lib/secrets";
 import { AD_TAG_CSP } from "@workspace/ui/lib/ad-tags";
 
 // Not awaited: the app has to serve sign-in and settings whether or not the
 // credential store is reachable.
 void startCredentialRefresh();
+
+/**
+ * Online Reset (Packet 1c): refuse to serve unless the database login is safe
+ * for tenant isolation (member of or_tenant, not a superuser, no BYPASSRLS).
+ * `OR_DB_ROLE_CHECK=warn` downgrades this to a warning for local development
+ * against a superuser database; it is ignored when NODE_ENV is "production".
+ */
+const warnOnly = process.env.OR_DB_ROLE_CHECK === "warn" && process.env.NODE_ENV !== "production";
+const databaseRoleReady = assertTenantRoleReady().then(
+	() => undefined,
+	(error: unknown) => {
+		console.error("[startup] database role check failed:", error instanceof Error ? error.message : error);
+		if (!warnOnly) process.exit(1);
+	},
+);
 
 // HSTS asserts HTTPS-only for the host that served the response. Whitelabel
 // deployments run on customer-controlled custom domains, where `includeSubDomains`
@@ -53,6 +69,7 @@ function addSecurityHeaders(response: Response): Response {
 export default createServerEntry(
 	wrapFetchWithSentry({
 		async fetch(request: Request) {
+			await databaseRoleReady;
 			const response = await handler.fetch(request);
 			return addSecurityHeaders(response);
 		},

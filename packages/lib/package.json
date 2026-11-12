@@ -60,6 +60,7 @@
 		"./mention-judge": "./src/mention-judge/index.ts",
 		"./db/schema-or": "./src/db/schema-or.ts",
 		"./db/tenant": "./src/db/tenant.ts",
+		"./db/role-check": "./src/db/role-check.ts",
 		"./or/*": "./src/or/*.ts"
 	},
 	"dependencies": {

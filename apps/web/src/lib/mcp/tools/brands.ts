@@ -5,7 +5,7 @@
  */
 import { brands, competitors } from "@workspace/lib/db/schema";
 import { z } from "zod";
-import { brandScopeCondition, requireBrandInScope, requireOrganizationInScope } from "@/lib/api/scope";
+import { brandScopeCondition, requireBrandInScope, requireOrganizationBillingAccess } from "@/lib/api/scope";
 import { organizationBilling } from "@/server/billing-core";
 import { listCompetitors } from "@/server/competitors-core";
 import { buildBrandResult, listBrands } from "@/server/onboarding-core";
@@ -63,7 +63,7 @@ export const getBilling = defineTool({
 		organizationId: z.string().describe("Organization id, from the organizationIds whoami reports."),
 	},
 	run: async ({ auth }, args) => {
-		requireOrganizationInScope(auth, args.organizationId);
+		requireOrganizationBillingAccess(auth, args.organizationId);
 		return organizationBilling(args.organizationId);
 	},
 });

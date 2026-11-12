@@ -23,26 +23,9 @@ import {
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { listUserOrganizations, requireAuthSession, requireOrganization } from "@/lib/auth/helpers";
+import { type BillingState, liveSubscription, loadBillingState } from "./billing-core";
 
-export type BillingState = {
-	billingEnabled: boolean;
-	organization: { id: string; name: string; role: string };
-	entitlements: Entitlements;
-	subscription: {
-		id: string;
-		stripeSubscriptionId: string | null;
-		plan: string;
-		status: string;
-		periodEnd: string | null;
-		cancelAtPeriodEnd: boolean;
-		billingInterval: string | null;
-		seats: number | null;
-	} | null;
-	hasBillingAccount: boolean;
-	premiumAddonQuantity: number;
-	premiumAddonAvailable: boolean;
-	usage: { brands: number; enabledPrompts: number; premiumAssigned: number };
-};
+export type { BillingState } from "./billing-core";
 
 export type PaywallRequired = {
 	needsPlan: true;
@@ -54,57 +37,11 @@ export type PaywallRequired = {
 
 export type PaywallState = { needsPlan: false } | PaywallRequired;
 
-const LIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "past_due"]);
-
-function liveSubscription<T extends { status: string | null }>(row: T | null): T | null {
-	return row && LIVE_SUBSCRIPTION_STATUSES.has(row.status ?? "") ? row : null;
-}
-
 export const getBillingStateFn = createServerFn({ method: "GET" })
 	.validator(z.object({ organizationId: z.string() }))
 	.handler(async ({ data }): Promise<BillingState> => {
 		const session = await requireAuthSession();
-		const org = await requireOrganization(session.user.id, data.organizationId);
-		const deployment = getDeployment();
-
-		const [state, [billingAccount]] = await Promise.all([
-			getOrgBillingState(org.id),
-			db
-				.select({ stripeCustomerId: organization.stripeCustomerId })
-				.from(organization)
-				.where(eq(organization.id, org.id))
-				.limit(1),
-		]);
-		const subscription = liveSubscription(state.subscription);
-		const [brandsUsed, promptsUsed, premiumAssigned] = state.entitlements.unlimited
-			? [0, 0, 0]
-			: await Promise.all([
-					countOrgBrands(org.id),
-					countOrgEnabledPrompts(org.id),
-					countOrgAssignedPremiumSlots(org.id),
-				]);
-
-		return {
-			billingEnabled: deployment.features.billing,
-			organization: org,
-			entitlements: state.entitlements,
-			subscription: subscription
-				? {
-						id: subscription.id,
-						stripeSubscriptionId: subscription.stripeSubscriptionId ?? null,
-						plan: subscription.plan,
-						status: subscription.status ?? "incomplete",
-						periodEnd: subscription.periodEnd?.toISOString() ?? null,
-						cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
-						billingInterval: subscription.billingInterval ?? null,
-						seats: subscription.seats ?? null,
-					}
-				: null,
-			hasBillingAccount: subscription !== null || Boolean(billingAccount?.stripeCustomerId),
-			premiumAddonQuantity: state.settings?.premiumAddonQuantity ?? 0,
-			premiumAddonAvailable: isPremiumAddonAvailable(state.entitlements.planKey),
-			usage: { brands: brandsUsed, enabledPrompts: promptsUsed, premiumAssigned },
-		};
+		return loadBillingState(session.user.id, data.organizationId);
 	});
 
 export const getPaywallStateFn = createServerFn({ method: "GET" })

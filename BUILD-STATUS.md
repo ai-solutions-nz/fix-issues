@@ -7,10 +7,11 @@ _Last updated: 2026-11-12. Current milestone: **5 (reporting and platform QA)**.
 ```bash
 pnpm install
 pnpm test                                    # 2,009 unit tests (8 packages)
-TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/elmo_test \
-  pnpm -C packages/lib test:integration      # 74 Postgres tests
-# same for apps/worker (34) and apps/web (168)
-pnpm lint                                    # Biome, 884 files, 0 errors
+# Integration tests run as a non-superuser login (see "Database login for tenant isolation")
+TEST_DATABASE_URL=postgres://or_app:or_app@localhost:5432/elmo_test \
+  pnpm -C packages/lib test:integration      # 79 Postgres tests
+# same for apps/worker (34) and apps/web (174)
+pnpm lint                                    # Biome, 886 files, 0 errors
 DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Christchurch demo
 ```
 
@@ -28,6 +29,7 @@ DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Chr
 | M1 Tenant isolation | `or_tenant` role, row-level-security (RLS) policy per table derived from its tenancy column (deny by default), `withTenant()`, the shared `db` handle follows the tenant transaction, `client` role limited to granted brands. | `packages/lib/src/db/tenant.integration.test.ts` (9 tests): cross-tenant reads return nothing, writes are rejected, untenanted tables are denied, every keyed table has a policy. `or/tenant-scope.integration.test.ts` (3). |
 | M1 Database isolation on every route | Every legacy Elmo entry point runs inside a tenant transaction, so Postgres RLS bounds it even if an application check were missed. **Server functions** (all pages, including Overview, Visibility, Citations, Share of Voice, Sentiment, Responses, Query Fan-Out, Opportunities and Settings): a global TanStack function middleware (`middleware/tenant.ts`, registered after auth in `start.ts`) scopes each signed-in user to their organizations, or to granted brands for the `client` role. **REST `/api/v1`**: `createApiHandler` runs every handler under the API key's reach. **MCP**: every tool runs through `runToolInTenant`. RLS now accepts several organizations, and covers `user`, `apikey`, `subscription` and `cited_pages` (migration `0039`). better-auth uses the unscoped connection for sessions and accounts. | `apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts` (147 tests). The caller's application-level checks are opened up (instance-admin principal) while the database is pinned to tenant A. Every REST route and verb (25 route files) and every MCP tool (17) is then pointed at tenant B's ids: no tenant B data appears in any response, tenant B's rows are unchanged after every write, and every write into tenant B is refused. Positive controls show tenant A's own data is still served. **Negative control:** the same suite at system scope fails 19 tests (leaks and successful writes into tenant B), which shows the database is what blocks them. Also covered: global middleware registration, and scope resolution for members, clients, non-members and instance admins. |
 | M1 Isolation fixes (Packet 1b, from Neo's review of `9e8ce82`) | (1) A `client` user over MCP (OAuth) now gets the same scope as on the web pages: one builder, `userTenantScope` in `packages/lib/src/or/tenant-scope.ts`, feeds both, so the principal carries the brand restriction. (2) The tenant handle closes when its transaction ends: a query that outlives the request throws `TenantTransactionClosedError` instead of running on a pooled connection that may be serving another tenant. (3) Fixed under the tenant scope: organization rename, the MCP consent page, accepting an invitation, and brand creation (brand ids are now random, so they cannot collide with, or reveal, another tenant's brand). Also fixed, found while doing this: creating an organization, and syncing memberships from Auth0. (4) Organization and brand ids must be letters, digits, `-` or `_` (API schemas and `withTenant`). (6) Signed-out server functions run in an empty scope; four named functions are allowlisted for system scope (`middleware/tenant.ts`). (9) Migration `0040`: `apikey`, `subscription` and `member` are read-only to every tenant; API keys and the subscription are hidden from `client` users and brand-scoped keys; only an owner or admin may rename an organization, and only its name and slug. Plans are still worked out for client users (entitlements read the subscription on the system handle). | `packages/lib/src/db/tenant-roles.integration.test.ts` (20 tests), including a stray tenant A query fired inside tenant B's transaction. With the closed-handle guard removed, two of these fail and the stray query reads tenant B's brand. `apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts` (13 tests): signs in over MCP as a real `client` user (only the OAuth signature check is stubbed) and as owner, member and newcomer through the real middleware function. (10) The isolation suite is now strict (90 tests): exact counts (25 route files, 17 tools, 38 endpoints; method guards excluded, and a 405 always fails); every endpoint has a declared expected outcome; only an isolation refusal passes (404 not found, a "not found" 400, or a 500 whose cause is Postgres SQLSTATE 42501); there is a positive tenant A check for every route group and 12 tools. Negative control at system scope: 40 failures (was 19). |
+| M1 Isolation fixes (Packet 1c, Neo's re-gate of `8ccc8b4`) | (1) The connection guard now sits on the transaction's pooled connection itself, not only on the shared `db` handle. The `tx` passed to a `withTenant` callback, a query built inside the scope and run later (plain, relational or prepared), and the shared handle all throw `TenantTransactionClosedError` once drizzle releases the connection after COMMIT or ROLLBACK. Code that uses `tx` directly (e.g. `server/online-reset.ts`) is covered. (3) Startup check (`packages/lib/src/db/role-check.ts`, called from `apps/web/src/server.ts`): the server exits with a clear error unless its database login can `SET ROLE or_tenant`, is not a superuser and has no BYPASSRLS, and `or_tenant` cannot bypass RLS. CI now runs the integration suites as such a login. (4) Billing: the billing settings data (plan, status, Stripe subscription id, renewal date, seats) is refused to `client` users. The REST billing route and the MCP `get_billing` tool refuse brand-limited keys and client users with 403. (5) The signed-out allowlist is empty; signed-out server functions always run in the empty scope. | `tenant-roles.integration.test.ts` (23 tests, 3 new). Each of Neo's two paths is reproduced inside organization B's open transaction (callback `tx` after commit; queries built in scope and run later, including a prepared statement). With the connection guard disabled, all three new tests fail and read rows. `role-check.integration.test.ts` (2). `signed-in-tenant.integration.test.ts` (19 tests; 6 billing). |
 | M1 Audit log | Append-only `or_audit_log`; a trigger rejects update and delete. Every workflow step writes to it. | Isolation suite; the optimisation suite asserts the full action sequence. |
 | M1 Credentials | CMS secrets encrypted with Elmo's AES-GCM keyring, bound to their row (AAD), and decrypted only in memory. | Optimisation suite asserts no plaintext is stored. |
 | **M2 Evidence model** | Every run stores collection method, requested and applied location, methodology version, model, timestamp and immutable raw output. Metrics refuse to mix methods. | `or-core/measurement.test.ts`, `lib/or/collection.test.ts`. |
@@ -108,10 +110,9 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 
 - **Unit:** 2,009.
   - or-core 72, lib 830, web 748, config 153, cli 89, deployment 64, site-audit 38, worker 15.
-- **Integration (Postgres 16):** 276.
-  - lib 74, worker 34, web 168. Web includes the strict 90-test isolation suite and 13 signed-in tests.
-  - The total is lower than Packet 1's 300 because the isolation suite no longer counts 57 method-guard (405) cases as isolation tests.
-- **Lint:** Biome over 884 files, 0 errors.
+- **Integration (Postgres 16):** 287, run as the non-superuser `or_app` login (member of `or_tenant` only, owner of the test database).
+  - lib 79, worker 34, web 174. Web includes the strict 90-test isolation suite and 19 signed-in tests.
+- **Lint:** Biome over 886 files, 0 errors.
 - **Type checks:** all packages, including the NodeNext worker.
 - **Production build:** `vite build` succeeded.
 - **Browser smoke test** (local dev server) covered:
@@ -125,29 +126,73 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 
 ## Known bugs and limitations
 
-- **Where database tenant scope does not apply.** Requests with no session run in an empty scope (no tenant rows), except four allowlisted functions (client config, environment validation state, the session itself, the consent region), which run at system scope and serve no tenant data. Instance administrators (a user with the `admin` role, or an instance admin API key) and of the background worker, which is system work. Server functions are covered by the global middleware; the isolation suite verifies that registration and the scope it applies, but it calls the REST routes and MCP tools individually, not each of the ~118 server functions. Those functions use the same core query modules the REST routes and MCP tools exercise.
+- **Where database tenant scope does not apply.** Requests with no session always run in an empty scope (no tenant rows); the signed-out allowlist is empty. Instance administrators (a user with the `admin` role, or an instance admin API key) and of the background worker, which is system work. Server functions are covered by the global middleware; the isolation suite verifies that registration and the scope it applies, but it calls the REST routes and MCP tools individually, not each of the ~118 server functions. Those functions use the same core query modules the REST routes and MCP tools exercise.
 - **Elmo branding remains in places.** About 60 references remain, including email templates, the version label, docs and GitHub links in the footer, the CLI and the floating dev widget. Per-tenant branding and custom domains are not built; Elmo's white-label mode is per-instance.
 - **"Publish" uses the brand's first CMS connection.** There is no UI to add or manage CMS connections, edit the brand profile, invite client users or grant them brands. These are currently set up through the service functions or the demo script.
 - **The demo's mock WordPress stops when the demo exits.** Publishing from the UI afterwards fails, and the failure is recorded as `failed`, until a real or mock CMS is connected.
 - **Embeddings are lexical, not semantic.** Question clustering uses a free, deterministic hash embedding stored as `real[]`; pgvector and model embeddings are not wired. As a result, paraphrases that share no words are not merged.
 - **Sentiment is not judged** unless a paid judge (TypeSafe or OpenRouter) is configured.
 
-## Known limitations (recorded from Neo's review of `9e8ce82`; not fixed in Packet 1b)
+## Known limitations (recorded from Neo's reviews of `9e8ce82` and `8ccc8b4`)
 
-- **(5) Raw SQL has not been audited.** Hand-written SQL (`sql` template literals passed to `execute`) runs under the same tenant role and policies, so it cannot bypass RLS, but it has not been reviewed query by query. In particular, nothing checks whether a raw query calls a `SECURITY DEFINER` helper in a way that widens what it returns.
+- **(5) Raw SQL can bypass row-level security. LAUNCH BLOCKER: the raw SQL audit must be done before launch.** The tenant scope is held in ordinary session settings (`or.org_ids`, `or.brand_ids`, `or.restricted_org_ids`, `or.admin_org_ids`, `or.user_id`), and `or_tenant` may change them itself. Any SQL that runs inside a tenant transaction can therefore widen its own scope: raw SQL in our code, a query built from unsafe input, or an injection. Neo demonstrated both:
+  - a `client` user clearing its own brand restriction with `set_config` to read API keys;
+  - a plain member forging `or.admin_org_ids` to rename the organization.
+
+  Until the audit is done and the settings are made tamper-proof, RLS only protects queries that our code builds safely; it is not a backstop against hostile SQL. Ways to make the settings tamper-proof: sign them with an HMAC that a `SECURITY DEFINER` function verifies, or have the policies read a scope table that `or_tenant` cannot write.
 - **(7) Nested scope is coarse.** A nested `withTenant` whose scope lies within the open one reuses the outer transaction, so it does not narrow it: inner code still sees everything the outer scope sees. A nested call with a wider or different scope is refused. Narrowing would need `SET LOCAL` save and restore around the inner call.
 - **(8) Pool and transaction risks.**
   - Every scoped request holds one pooled connection for its whole duration, including signed-out requests, which now open an empty-scope transaction. Long requests (streaming, slow outbound calls inside a server function) can therefore exhaust the pool.
-  - A stray query after the transaction ends now throws; work deliberately detached from a request must use `serviceDb` or open its own `withTenant`.
+  - A stray query after the transaction ends now throws, through any path (the shared handle, the callback's `tx`, or a query built earlier). Work deliberately detached from a request must use `serviceDb` or open its own `withTenant`.
   - Code that reads `serviceDb` while a tenant transaction is open uses a second connection, so it cannot see that transaction's uncommitted writes.
   - Not tested against PgBouncer in transaction mode (`SET LOCAL` and `set_config(..., true)` are transaction-scoped, which should be compatible, but this is unverified).
 - **(11) `cited_pages` policy performance.** `or_page_visible()` runs two `EXISTS` subqueries per row (rollups and citations, each calling `or_brand_visible`). This is correct, but it is not benchmarked and could be slow on large citation tables. An index review or a materialized brand-to-page map may be needed.
-- **(12) The app's database login must be a member of `or_tenant`.** `SET LOCAL ROLE or_tenant` fails unless the login role used by `DATABASE_URL` has been granted membership (`GRANT or_tenant TO <app_login>`). The tests connect as the `postgres` superuser, which may `SET ROLE` without a grant, so they do not catch a missing grant. Deployment scripts do not yet grant the membership or check for it at startup.
+- **(12) The app's database login must be a member of `or_tenant`.** This is now checked at startup and in CI (see "Database login for tenant isolation"). Deployment scripts still do not create the login or grant the membership; that is a manual step.
 - **Reports for non-admin report-generator users.** The `reports` table has no tenant column. Under tenant scope it is denied: the `/api/v1/reports` routes are instance-admin-only (system scope), but the web reports pages for a non-admin user with report-generator access now fail with permission denied. Not fixed: it needs a decision on whether reports become tenant-owned.
-- **Billing page data for restricted users.** Entitlements read the subscription on the system handle, so the plan still applies to `client` users. The billing server functions return subscription details to whoever passes their own (app-level) checks; this has not been re-reviewed for the `client` role.
+- **Billing for restricted users.** Fixed in Packet 1c (see above). The paywall check (`getPaywallStateFn`) still tells a client user whether their organization needs a plan, but returns no subscription details.
+
+## Database login for tenant isolation
+
+The web server refuses to start unless its `DATABASE_URL` login meets all of these:
+- it is a member of `or_tenant`, with the right to `SET ROLE` to it;
+- it is `NOSUPERUSER` and `NOBYPASSRLS`;
+- `or_tenant` itself cannot bypass RLS.
+
+The login should own the database (it runs the migrations). The system handle relies on that: table owners are exempt from RLS without `FORCE`. One-time setup, as an administrator:
+
+```sql
+CREATE ROLE or_app LOGIN PASSWORD '…' NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB;
+CREATE ROLE or_tenant NOLOGIN NOBYPASSRLS;   -- or let the first migration create it
+GRANT or_tenant TO or_app;
+ALTER DATABASE <db> OWNER TO or_app;
+```
+
+- **CI setting:** `.github/workflows/build.yaml` runs these statements in the step "Create the non-superuser app login" (with the test-only password `or_app`). It then runs every integration suite with `TEST_DATABASE_URL=postgres://or_app:or_app@localhost:5432/elmo_test`. Run locally the same way.
+- **Local development against a superuser database:** set `OR_DB_ROLE_CHECK=warn` to log the failure instead of exiting. This is ignored when `NODE_ENV=production`.
+- **Migration 0034:** now grants `or_tenant` to the migrating login only when it is not already a member. A login that holds the membership without ADMIN OPTION can therefore run the migrations. Databases that already applied 0034 are unaffected.
+
+## Launch checklist
+
+Must be complete before any real client data or public launch:
+
+- [ ] **Raw SQL audit (launch blocker; see limitation 5).**
+  - Review every `sql`/`execute` call and every `SECURITY DEFINER` function.
+  - Make the tenant settings tamper-proof so that SQL inside a tenant transaction cannot widen its own scope.
+  - Add tests for Neo's two demonstrations: a client clearing its brand restriction, and a member forging admin.
+- [ ] **Existing brand and organization ids conform to the new id format** (`^[A-Za-z0-9_-]{1,128}$`). Run `SELECT id FROM brands WHERE id !~ '^[A-Za-z0-9_-]{1,128}$'` (and the same for `organization`) against production before deploying. Any row returned must be migrated first, or its tenant requests will fail.
+- [ ] **Load test.** Every signed-out request now opens an (empty-scope) transaction, and every scoped request holds a pooled connection for its whole duration. Size the pool, and check signed-out traffic (landing, sign-in, static server functions) does not exhaust it.
+- [ ] **`cited_pages` policy performance** (limitation 11). Benchmark `or_page_visible()` on production-sized citation tables, and add indexes or a materialized brand-to-page map if needed.
+- [ ] **Reports become tenant-owned before report pages open to non-admins.**
+  - Add `organization_id` to `reports`, as a foreign key to `organization` with `ON DELETE CASCADE`, plus `created_by`.
+  - Index `organization_id`.
+  - Re-apply the tenant policies (`SELECT or_apply_tenant_policies()`).
+  - Backfill old reports as admin-only (no organization) unless the owner is known.
+  - Then require an owner on every new row.
+  - Give public report links their own lookup (by an unguessable token, on the system handle) rather than relying on tenant scope.
+- [ ] **Production database login** set up as in "Database login for tenant isolation", and the startup check passing.
 
 <details>
-<summary><code>rg -n "serviceDb" apps packages</code> (202 lines, sorted by path, 2026-11-12, after Packet 1b)</summary>
+<summary><code>rg -n "serviceDb" apps packages</code> (as of Packet 1b; 202 lines, sorted by path, 2026-11-12, after Packet 1b)</summary>
 
 All non-test production uses are system work: better-auth, provisioning, Auth0 membership sync, the secrets store, entitlement plans, the scope builders, the global slug check, the consent page's OAuth client lookup, the post-invitation slug read, the worker, and the demo script.
 

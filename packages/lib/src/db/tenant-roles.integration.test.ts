@@ -49,6 +49,14 @@ beforeAll(async () => {
 
 afterAll(cleanup);
 
+/** Drizzle wraps a driver error in DrizzleQueryError; the guard's error is its cause. */
+function closedByGuard(error: unknown): boolean {
+	for (let e = error, depth = 0; e && depth < 5; e = (e as { cause?: unknown }).cause, depth++) {
+		if (e instanceof TenantTransactionClosedError) return true;
+	}
+	return false;
+}
+
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe("the tenant handle closes with its transaction", () => {
@@ -78,6 +86,66 @@ describe("the tenant handle closes with its transaction", () => {
 		});
 		expect(seenByB.outcome).toEqual({ error: expect.any(TenantTransactionClosedError) });
 		expect(seenByB.own.map((b) => b.id)).toEqual([BRAND_B]);
+	});
+
+	// Packet 1c: Neo's two repros. Each fires inside organization B's open
+	// transaction, which may be holding the very connection A's request used.
+	it("refuses the callback's tx after its transaction has committed", async () => {
+		let saved: typeof db | undefined;
+		await withTenant({ organizationId: ORG_A }, async (tx) => {
+			saved = tx as unknown as typeof db;
+		});
+		const outcome = await withTenant({ organizationId: ORG_B }, async () =>
+			(saved as typeof db)
+				.select({ id: brands.id })
+				.from(brands)
+				.then(
+					(rows) => ({ rows }),
+					(error: unknown) => ({ error }),
+				),
+		);
+		expect("rows" in outcome, "tenant A's tx read rows inside tenant B's transaction").toBe(false);
+		expect(closedByGuard((outcome as { error: unknown }).error)).toBe(true);
+		const direct = await (saved as typeof db).execute(sql`select 1`).then(
+			() => null,
+			(error: unknown) => error,
+		);
+		expect(closedByGuard(direct)).toBe(true);
+	});
+
+	it("refuses a query built inside the scope but run after it ended", async () => {
+		const built: { viaDb?: PromiseLike<unknown>; viaTx?: PromiseLike<unknown>; relational?: PromiseLike<unknown> } = {};
+		await withTenant({ organizationId: ORG_A }, async (tx) => {
+			built.viaDb = db.select({ id: brands.id }).from(brands);
+			built.viaTx = tx.select({ id: brands.id }).from(brands);
+			built.relational = db.query.brands.findMany({ columns: { id: true } });
+		});
+		const outcomes = await withTenant({ organizationId: ORG_B }, async () =>
+			Promise.all(
+				[built.viaDb, built.viaTx, built.relational].map((query) =>
+					Promise.resolve(query).then(
+						(rows) => ({ rows }),
+						(error: unknown) => ({ error }),
+					),
+				),
+			),
+		);
+		for (const outcome of outcomes) {
+			expect("rows" in outcome, "a query built in tenant A's scope ran later").toBe(false);
+			expect(closedByGuard((outcome as { error: unknown }).error)).toBe(true);
+		}
+	});
+
+	it("refuses a prepared statement made inside the scope and run after it", async () => {
+		let prepared: { execute: () => Promise<unknown> } | undefined;
+		await withTenant({ organizationId: ORG_A }, async (tx) => {
+			prepared = tx.select({ id: brands.id }).from(brands).prepare("or_roles_prepared");
+		});
+		const error = await withTenant({ organizationId: ORG_B }, async () => prepared?.execute()).then(
+			() => null,
+			(e: unknown) => e,
+		);
+		expect(closedByGuard(error)).toBe(true);
 	});
 
 	it("refuses to open a nested scope from a closed one", async () => {

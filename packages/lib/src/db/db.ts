@@ -16,7 +16,7 @@ export function createDb(url: string) {
 	});
 }
 
-type Db = ReturnType<typeof createDb>;
+export type Db = ReturnType<typeof createDb>;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 /**

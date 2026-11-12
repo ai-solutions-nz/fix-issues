@@ -14,7 +14,7 @@ vi.mock("@workspace/lib/db/db", () => {
 			},
 		},
 	);
-	return { db: chain };
+	return { db: chain, serviceDb: chain };
 });
 
 vi.mock("@workspace/lib/entitlements", () => ({

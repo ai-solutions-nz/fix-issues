@@ -21,6 +21,40 @@ export interface TenantScope {
 
 type Tx = Parameters<Parameters<typeof serviceDb.transaction>[0]>[0];
 
+type PooledClient = { query: (...args: unknown[]) => unknown; release: (...args: unknown[]) => unknown };
+
+/**
+ * Online Reset (Packet 1c): every query of a tenant transaction, whether made
+ * through the shared `db` handle, the `tx` passed to the callback, or a query
+ * built inside the scope and run later, goes through the transaction's pooled
+ * connection. That connection is replaced by a guard which refuses queries
+ * once drizzle releases it to the pool (after COMMIT or ROLLBACK), so nothing
+ * can run on it after it may have started serving another tenant.
+ */
+function guardTransactionConnection(tx: Tx, state: { closed: boolean }): void {
+	const session = (tx as unknown as { session?: { client?: PooledClient } }).session;
+	const client = session?.client;
+	if (!session || !client || typeof client.query !== "function" || typeof client.release !== "function") {
+		throw new Error("withTenant: cannot guard the transaction connection (unexpected driver session shape)");
+	}
+	session.client = new Proxy(client, {
+		get(target, property) {
+			if (property === "query") {
+				return (...args: unknown[]) =>
+					state.closed ? Promise.reject(new TenantTransactionClosedError()) : target.query(...args);
+			}
+			if (property === "release") {
+				return (...args: unknown[]) => {
+					state.closed = true;
+					return target.release(...args);
+				};
+			}
+			const value = Reflect.get(target, property, target);
+			return typeof value === "function" ? value.bind(target) : value;
+		},
+	});
+}
+
 /** Ids are passed to Postgres as comma-separated settings, so an id must be one plain token. */
 export const TENANT_ID_FORMAT = /^[A-Za-z0-9_-]{1,128}$/;
 
@@ -65,34 +99,37 @@ export async function withTenant<T>(scope: TenantScope, fn: (tx: Tx) => Promise<
 		if (!within(scope, current)) throw new Error("withTenant: already inside another organization's scope");
 		return fn(current.tx);
 	}
-	return serviceDb.transaction(async (tx) => {
-		await tx.execute(sql`set local role or_tenant`);
-		await tx.execute(
-			sql`select set_config('or.org_ids', ${organizationIds.join(",")}, true),
-				set_config('or.org_id', ${organizationIds[0] ?? ""}, true),
-				set_config('or.brand_ids', ${brandSetting(scope.brandIds)}, true),
-				set_config('or.restricted_org_ids', ${(scope.restrictedOrganizationIds ?? []).join(",")}, true),
-				set_config('or.admin_org_ids', ${(scope.adminOrganizationIds ?? []).join(",")}, true),
-				set_config('or.user_id', ${scope.userId ?? ""}, true)`,
-		);
-		const store = {
-			tx,
-			organizationId: organizationIds[0] ?? "",
-			organizationIds,
-			brandIds: scope.brandIds,
-			closed: false,
-		};
-		try {
-			return await tenantContext.run(store, () => fn(tx));
-		} finally {
-			store.closed = true;
-		}
-	});
+	const store = {
+		tx: undefined as unknown as Tx,
+		organizationId: organizationIds[0] ?? "",
+		organizationIds,
+		brandIds: scope.brandIds,
+		closed: false,
+	};
+	try {
+		return await serviceDb.transaction(async (tx) => {
+			store.tx = tx;
+			guardTransactionConnection(tx, store);
+			await tx.execute(sql`set local role or_tenant`);
+			await tx.execute(
+				sql`select set_config('or.org_ids', ${organizationIds.join(",")}, true),
+					set_config('or.org_id', ${organizationIds[0] ?? ""}, true),
+					set_config('or.brand_ids', ${brandSetting(scope.brandIds)}, true),
+					set_config('or.restricted_org_ids', ${(scope.restrictedOrganizationIds ?? []).join(",")}, true),
+					set_config('or.admin_org_ids', ${(scope.adminOrganizationIds ?? []).join(",")}, true),
+					set_config('or.user_id', ${scope.userId ?? ""}, true)`,
+			);
+			return tenantContext.run(store, () => fn(tx));
+		});
+	} finally {
+		// Also set by the guarded connection's release; this covers a failed BEGIN.
+		store.closed = true;
+	}
 }
 
 /**
  * `withTenant` when there is a scope; `fn` directly (system scope) when there is
- * none, which only an instance administrator or an allowlisted request gets.
+ * none, which only an instance administrator gets (and the worker, which does not use it).
  */
 export function withTenantOrSystem<T>(scope: TenantScope | null, fn: () => Promise<T>): Promise<T> {
 	return scope ? withTenant(scope, () => fn()) : fn();

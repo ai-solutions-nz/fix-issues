@@ -6,7 +6,7 @@
  * signed-out default. All data is simulated.
  */
 import { db, serviceDb } from "@workspace/lib/db/db";
-import { provisionUmbrellaOrg } from "@workspace/lib/db/provisioning";
+import { countUsers, provisionUmbrellaOrg } from "@workspace/lib/db/provisioning";
 import { brands, member, oauthClient, organization, user } from "@workspace/lib/db/schema";
 import { orMemberBrandAccess } from "@workspace/lib/db/schema-or";
 import { eq, inArray, like } from "drizzle-orm";
@@ -20,16 +20,29 @@ vi.mock("@workspace/lib/auth/server", async (importOriginal) => ({
 	verifyMcpAccessToken,
 }));
 vi.mock("@/lib/auth/server", () => ({ auth: {} }));
+// An API key for the billing route tests; without one, the real resolver runs.
+const keyState = vi.hoisted(() => ({ auth: null as unknown }));
+vi.mock("@/lib/auth/api-auth", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/auth/api-auth")>();
+	return {
+		...actual,
+		resolveApiAuth: vi.fn(async (request: Request) =>
+			keyState.auth ? { auth: keyState.auth } : actual.resolveApiAuth(request),
+		),
+	};
+});
 
 const { resolveMcpAuth } = await import("@/lib/mcp/auth");
 const { runToolInTenant } = await import("@/lib/mcp/server");
 const { MCP_TOOLS } = await import("@/lib/mcp/tools");
 const { tenantScopeForPrincipal } = await import("@/lib/auth/tenant-scope");
-const { runServerFnInTenant } = await import("@/middleware/tenant");
+const { runServerFnInTenant, SIGNED_OUT_SYSTEM_FUNCTIONS } = await import("@/middleware/tenant");
 const { findMcpClientSummary, insertBrandInOrganization, joinedOrganizationSlug, renameOrganization } = await import(
 	"@/server/signed-in-core"
 );
 const { TAKEN_SLUG } = await import("@/lib/slug-errors");
+const { loadBillingState } = await import("@/server/billing-core");
+const billingRoute = await import("@/routes/api/v1/organizations/$organizationId/billing");
 
 const ORG_A = "si-org-a";
 const ORG_B = "si-org-b";
@@ -233,16 +246,89 @@ describe("item 6: signed-out server functions", () => {
 		expect(await runServerFnInTenant(null, undefined, visibleBrands)).toEqual([]);
 	});
 
-	it("run at system scope only when explicitly allowlisted", async () => {
-		const rows = await runServerFnInTenant(
-			null,
+	it("has no allowlist: the four former entries run in the empty scope and still do their work", async () => {
+		expect(SIGNED_OUT_SYSTEM_FUNCTIONS.size).toBe(0);
+		const former = [
 			{ name: "getClientConfig", filename: "src/server/config.ts" },
-			visibleBrands,
+			{ name: "getEnvValidationStateFn", filename: "src/server/config.ts" },
+			{ name: "getSession", filename: "src/lib/auth/session.ts" },
+			{ name: "getConsentRegion", filename: "src/lib/consent-region.ts" },
+		];
+		for (const meta of former) expect(await runServerFnInTenant(null, meta, visibleBrands)).toEqual([]);
+		// getClientConfig's only database read (the user count) is a system read on serviceDb.
+		const users = await runServerFnInTenant(null, former[0], () => countUsers());
+		expect(users).toBeGreaterThan(0);
+	});
+});
+
+describe("Packet 1c item 4: billing is not shown to client users or brand-limited keys", () => {
+	type Handler = (ctx: { request: Request; params: Record<string, string> }) => Promise<Response>;
+	const handlers = (billingRoute.Route.options as unknown as { server: { handlers: Record<string, Handler> } }).server
+		.handlers;
+	const orgKey = (brandIds: string[] | null) => ({
+		kind: "organization" as const,
+		keyId: "si-key",
+		name: "simulated key",
+		organizationId: ORG_A,
+		organizationName: "Simulated Agency A",
+		scopes: new Set(["read" as const]),
+		brandIds,
+		createdAt: null,
+		lastUsedAt: null,
+		expiresAt: null,
+		rateLimit: { limit: 1000, window: "minute" as const },
+		rateLimitRemaining: null,
+	});
+	const callBilling = async (brandIds: string[] | null) => {
+		keyState.auth = orgKey(brandIds);
+		try {
+			const request = new Request(`http://localhost/api/v1/organizations/${ORG_A}/billing`, {
+				headers: { authorization: "Bearer simulated" },
+			});
+			return await (handlers.GET as Handler)({ request, params: { organizationId: ORG_A } });
+		} finally {
+			keyState.auth = null;
+		}
+	};
+
+	it("refuses the billing settings data to a client user, as the server function runs it", async () => {
+		await expect(
+			runServerFnInTenant(session(CLIENT), ORDINARY_FN, () => loadBillingState(CLIENT, ORG_A)),
+		).rejects.toThrow(/not available to client users/);
+	});
+
+	it("still gives it to the organization's owner and members", async () => {
+		const owner = await runServerFnInTenant(session(OWNER), ORDINARY_FN, () => loadBillingState(OWNER, ORG_A));
+		expect(owner.organization).toMatchObject({ id: ORG_A, role: "owner" });
+		const asMember = await runServerFnInTenant(session(MEMBER), ORDINARY_FN, () => loadBillingState(MEMBER, ORG_A));
+		expect(asMember.organization.role).toBe("member");
+	});
+
+	it("REST: refuses a brand-limited key with 403", async () => {
+		const response = await callBilling([BRAND_GRANTED]);
+		expect(response.status).toBe(403);
+		expect(await response.text()).not.toContain("periodEnd");
+	});
+
+	it("REST: refuses a key limited to no brands with 403", async () => {
+		expect((await callBilling([])).status).toBe(403);
+	});
+
+	it("REST: still serves a key that reaches the whole organization", async () => {
+		const response = await callBilling(null);
+		expect(response.status, await response.clone().text()).toBe(200);
+		expect(await response.json()).toMatchObject({ organizationId: ORG_A });
+	});
+
+	it("MCP: refuses get_billing to a client user signed in over OAuth", async () => {
+		verifyMcpAccessToken.mockResolvedValue({ sub: CLIENT, client_id: OAUTH_CLIENT, exp: 1_900_000_000 });
+		const resolved = await resolveMcpAuth(
+			new Request("http://localhost/api/mcp", { method: "POST", headers: { Authorization: "Bearer oauth-token" } }),
 		);
-		expect(rows.length).toBeGreaterThan(0);
-		// The same name from another file is not on the list.
-		expect(
-			await runServerFnInTenant(null, { name: "getClientConfig", filename: "src/server/brands.ts" }, visibleBrands),
-		).toEqual([]);
+		if (!("auth" in resolved)) throw new Error("sign-in failed");
+		const tool = MCP_TOOLS.find((t) => t.name === "get_billing") as (typeof MCP_TOOLS)[number];
+		await expect(
+			runToolInTenant(tool, { auth: resolved.auth, toolNames: [] }, { organizationId: ORG_A }),
+		).rejects.toThrow(/not available/);
 	});
 });

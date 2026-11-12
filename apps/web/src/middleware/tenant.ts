@@ -2,7 +2,7 @@
  * Online Reset: runs every server function inside a tenant transaction (see
  * `@/lib/auth/tenant-scope`). A signed-in user gets their own scope. A request
  * without a session gets an empty scope, in which row-level security shows no
- * tenant row at all, unless the function is on the allowlist below.
+ * tenant row at all, unless the function is on the allowlist below (empty).
  */
 import { createMiddleware } from "@tanstack/react-start";
 import { withTenant, withTenantOrSystem } from "@workspace/lib/db/tenant";
@@ -13,15 +13,13 @@ type FnMeta = { name?: string; filename?: string } | undefined;
 
 /**
  * Server functions a signed-out visitor may run at system scope, keyed by
- * source file and function name. Each serves no tenant data: instance
- * configuration, the session itself, the cookie-consent region.
+ * `<source file>#<function name>`. Empty (Packet 1c): the four signed-out
+ * functions (getClientConfig, getEnvValidationStateFn, getSession,
+ * getConsentRegion) read only system tables through `serviceDb`, or no
+ * database at all, so they work in the empty scope. Add an entry only for a
+ * function that cannot, and say why next to it.
  */
-export const SIGNED_OUT_SYSTEM_FUNCTIONS: ReadonlySet<string> = new Set([
-	"src/server/config.ts#getClientConfig",
-	"src/server/config.ts#getEnvValidationStateFn",
-	"src/lib/auth/session.ts#getSession",
-	"src/lib/consent-region.ts#getConsentRegion",
-]);
+export const SIGNED_OUT_SYSTEM_FUNCTIONS: ReadonlySet<string> = new Set<string>([]);
 
 export function isSignedOutSystemFunction(meta: FnMeta): boolean {
 	if (!meta?.name || !meta.filename) return false;

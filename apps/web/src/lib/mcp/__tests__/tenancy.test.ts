@@ -28,6 +28,9 @@ vi.mock("@/lib/api/scope", () => ({
 	requireOrganizationInScope: vi.fn(() => {
 		throw REFUSED;
 	}),
+	requireOrganizationBillingAccess: vi.fn(() => {
+		throw REFUSED;
+	}),
 }));
 
 /** So a tool that skipped the check gets rows rather than a connection error. */
@@ -61,6 +64,7 @@ const SCOPE_CHECKS = [
 	scope.brandScopeCondition,
 	scope.organizationScopeCondition,
 	scope.requireOrganizationInScope,
+	scope.requireOrganizationBillingAccess,
 ] as unknown as Array<{ mock: { calls: unknown[] } }>;
 
 /** Hand-written so a new tool has to be added here; fabricating arguments

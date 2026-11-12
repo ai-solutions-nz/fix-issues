@@ -12,7 +12,16 @@ BEGIN
 END
 $$;
 --> statement-breakpoint
-GRANT or_tenant TO CURRENT_USER;
+-- Online Reset (Packet 1c): grant only when missing, so a NOSUPERUSER app login
+-- that was given membership by an administrator (without ADMIN OPTION) can run
+-- the migrations. Already-migrated databases are unaffected.
+DO $$
+BEGIN
+	IF NOT pg_has_role(current_user, 'or_tenant', 'MEMBER') THEN
+		GRANT or_tenant TO CURRENT_USER;
+	END IF;
+END
+$$;
 --> statement-breakpoint
 GRANT USAGE ON SCHEMA public TO or_tenant;
 --> statement-breakpoint

@@ -93,6 +93,21 @@ export function requireOrganizationInScope(auth: Principal, organizationId: stri
 	}
 }
 
+/**
+ * Online Reset (Packet 1c): billing is the agency's business. A key limited to
+ * particular brands, or a user who is a client in this organization, is
+ * refused even though the organization is otherwise in reach.
+ */
+export function requireOrganizationBillingAccess(auth: Principal, organizationId: string): void {
+	requireOrganizationInScope(auth, organizationId);
+	const restricted =
+		(auth.kind === "organization" && auth.brandIds !== null) ||
+		(auth.kind === "user" && auth.restrictedOrganizationIds.includes(organizationId));
+	if (restricted) {
+		throw new ApiError(403, "Forbidden", "Billing is not available to a key or user limited to particular brands.");
+	}
+}
+
 export function organizationScopeCondition(auth: Principal, column: Parameters<typeof eq>[0]): SQL | undefined {
 	const { organizationIds } = principalReach(auth);
 	if (organizationIds === null) return undefined;
