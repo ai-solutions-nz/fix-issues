@@ -29,6 +29,8 @@ vi.mock("@/lib/auth/helpers", () => ({ listUserOrganizations }));
 vi.mock("@workspace/lib/db/db", async () => {
 	const { user } = await import("@workspace/lib/db/schema");
 	return {
+		// better-auth is built on serviceDb (Online Reset); this test never reaches it.
+		serviceDb: {},
 		db: {
 			select: () => ({
 				from: (table: unknown) => ({

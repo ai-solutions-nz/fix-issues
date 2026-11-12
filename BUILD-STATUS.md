@@ -1,6 +1,6 @@
 # Online Reset: Build Status
 
-_Last updated: 2026-11-07. Current milestone: **5 (reporting and platform QA)**. A first pass of every milestone is implemented, but some items remain open; see "Missing functionality"._
+_Last updated: 2026-11-12. Current milestone: **5 (reporting and platform QA)**. A first pass of every milestone is implemented, but some items remain open; see "Missing functionality"._
 
 ## How to verify everything below
 
@@ -9,18 +9,16 @@ pnpm install
 pnpm test                                    # 2,008 unit tests (9 packages)
 TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/elmo_test \
   pnpm -C packages/lib test:integration      # 54 Postgres tests
-# same for apps/worker (34) and apps/web (65)
-pnpm lint                                    # Biome, 878 files, 0 errors
+# same for apps/worker (34) and apps/web (212)
+pnpm lint                                    # Biome, 881 files, 0 errors
 DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Christchurch demo
 ```
 
 ## Repository
 
-- **The GitHub repository was not created.** This session's GitHub access only covers `ai-solutions-nz/fix-issues`, and repository creation is not permitted here. The project exists as a local git repository (`/home/user/online-reset-platform`). To make it permanent:
-  1. Create an empty private repository, `ai-solutions-nz/online-reset-platform`.
-  2. Attach it to the session.
-  3. Push `main`.
-- The fork keeps Elmo's history. `upstream` points at `elmohq/elmo`, and the base is `db2d52b`.
+- **Location:** branch `online-reset-platform` of `ai-solutions-nz/fix-issues` (https://github.com/ai-solutions-nz/fix-issues/tree/online-reset-platform). All Online Reset work is committed and pushed there. `main` and the research branch `ccr-0af30c39-oq25zx` are separate and untouched.
+- **History:** the branch keeps Elmo's history. Locally, `upstream` points at `elmohq/elmo`, and the fork base is `db2d52b`.
+- **Not done:** a dedicated `ai-solutions-nz/online-reset-platform` repository was not created, because this session cannot create repositories. Moving the branch there later is a plain push.
 
 ## Completed features (each has implementation and test evidence)
 
@@ -28,6 +26,7 @@ DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Chr
 |---|---|---|
 | **M1 Foundation** | Elmo fork; PostHog telemetry removed (worker, CLI, web fallback key); upstream-only workflows removed (including the scheduled live-provider job that spent API credit); research imported into `docs/research/`. | Baseline: 1,974 unit + 63 integration Elmo tests passed before any change. |
 | M1 Tenant isolation | `or_tenant` role, row-level-security (RLS) policy per table derived from its tenancy column (deny by default), `withTenant()`, the shared `db` handle follows the tenant transaction, `client` role limited to granted brands. | `packages/lib/src/db/tenant.integration.test.ts` (9 tests): cross-tenant reads return nothing, writes are rejected, untenanted tables are denied, every keyed table has a policy. `or/tenant-scope.integration.test.ts` (3). |
+| M1 Database isolation on every route | Every legacy Elmo entry point runs inside a tenant transaction, so Postgres RLS bounds it even if an application check were missed. **Server functions** (all pages, including Overview, Visibility, Citations, Share of Voice, Sentiment, Responses, Query Fan-Out, Opportunities and Settings): a global TanStack function middleware (`middleware/tenant.ts`, registered after auth in `start.ts`) scopes each signed-in user to their organizations, or to granted brands for the `client` role. **REST `/api/v1`**: `createApiHandler` runs every handler under the API key's reach. **MCP**: every tool runs through `runToolInTenant`. RLS now accepts several organizations, and covers `user`, `apikey`, `subscription` and `cited_pages` (migration `0039`). better-auth uses the unscoped connection for sessions and accounts. | `apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts` (147 tests). The caller's application-level checks are opened up (instance-admin principal) while the database is pinned to tenant A. Every REST route and verb (25 route files) and every MCP tool (17) is then pointed at tenant B's ids: no tenant B data appears in any response, tenant B's rows are unchanged after every write, and every write into tenant B is refused. Positive controls show tenant A's own data is still served. **Negative control:** the same suite at system scope fails 19 tests (leaks and successful writes into tenant B), which shows the database is what blocks them. Also covered: global middleware registration, and scope resolution for members, clients, non-members and instance admins. |
 | M1 Audit log | Append-only `or_audit_log`; a trigger rejects update and delete. Every workflow step writes to it. | Isolation suite; the optimisation suite asserts the full action sequence. |
 | M1 Credentials | CMS secrets encrypted with Elmo's AES-GCM keyring, bound to their row (AAD), and decrypted only in memory. | Optimisation suite asserts no plaintext is stored. |
 | **M2 Evidence model** | Every run stores collection method, requested and applied location, methodology version, model, timestamp and immutable raw output. Metrics refuse to mix methods. | `or-core/measurement.test.ts`, `lib/or/collection.test.ts`. |
@@ -81,11 +80,12 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 **Created**
 - `packages/or-core/` (domain logic: measurement, geo, mentions, share of voice, clustering, questions, visibility, audits, opportunities, content).
 - `packages/lib/src/db/{schema-or,tenant}.ts`.
-- Migrations `0033`–`0038`.
+- Migrations `0033`–`0039`.
 - `packages/lib/src/or/` (tenancy scope, collection, visibility, audit, opportunity, optimisation, connections, publishing, dashboard, report, keywords, deterministic judge, demo).
 - `packages/lib/src/providers/registry/fixture.ts`.
 - `apps/worker/src/or-jobs.ts`, `apps/worker/scripts/or-demo.ts`.
 - `apps/web/src/server/online-reset.ts`.
+- `apps/web/src/middleware/tenant.ts`, `apps/web/src/lib/auth/tenant-scope.ts`, `apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts`.
 - `apps/web/src/routes/_authed/app/org/$org/brand/$brand/online-reset.tsx`.
 
 **Modified Elmo files**
@@ -99,15 +99,16 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 - `process-prompt.ts` (location, evidence, `runPromptNow`).
 - Worker `index.ts`.
 - Web sidebar, logo, sales panel, `route-head.ts`, `vite.config.ts` (`optimizeDeps` exclude).
+- `start.ts` (tenant middleware), `lib/api/handler.ts` and `lib/mcp/server.ts` (tenant scope), `packages/lib/src/auth/server.ts` (better-auth on the unscoped connection).
 - Telemetry modules.
 
 ## Tests performed (latest run, all passing)
 
 - **Unit:** 2,008.
   - or-core 72, lib 830, web 747, config 153, cli 89, deployment 64, site-audit 38, worker 15.
-- **Integration (Postgres 16):** 153.
-  - lib 54, worker 34, web 65.
-- **Lint:** Biome over 878 files, 0 errors.
+- **Integration (Postgres 16):** 300.
+  - lib 54, worker 34, web 212 (includes the 147-test tenant isolation suite).
+- **Lint:** Biome over 881 files, 0 errors.
 - **Type checks:** all packages, including the NodeNext worker.
 - **Production build:** `vite build` succeeded.
 - **Browser smoke test** (local dev server) covered:
@@ -121,7 +122,7 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 
 ## Known bugs and limitations
 
-- **Legacy Elmo pages are not yet tenant-isolated in the database.** Overview, Visibility, Citations and the other Elmo pages, plus the REST API and MCP server, still rely on Elmo's application-level `organization_id` checks. Only Online Reset's server functions run inside `withTenant`.
+- **Where database tenant scope does not apply.** Requests with no session (sign-up, sign-in, setup status) run at system scope, as before, and serve no tenant data. The same is true of instance administrators (a user with the `admin` role, or an instance admin API key) and of the background worker, which is system work. Server functions are covered by the global middleware; the isolation suite verifies that registration and the scope it applies, but it calls the REST routes and MCP tools individually, not each of the ~118 server functions. Those functions use the same core query modules the REST routes and MCP tools exercise.
 - **Elmo branding remains in places.** About 60 references remain, including email templates, the version label, docs and GitHub links in the footer, the CLI and the floating dev widget. Per-tenant branding and custom domains are not built; Elmo's white-label mode is per-instance.
 - **"Publish" uses the brand's first CMS connection.** There is no UI to add or manage CMS connections, edit the brand profile, invite client users or grant them brands. These are currently set up through the service functions or the demo script.
 - **The demo's mock WordPress stops when the demo exits.** Publishing from the UI afterwards fails, and the failure is recorded as `failed`, until a real or mock CMS is connected.
@@ -149,10 +150,19 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 | Consumer AI surfaces, AI Overviews/Mode, Copilot | DataForSEO or another vendor (decision D3) | Not activated. |
 | Keyword volume and rank tracking | DataForSEO | Adapter built; not called live. |
 | CMS publishing | Client WordPress Application Password or Shopify Admin token | Mock-tested only. |
-| Repository hosting | GitHub `ai-solutions-nz/online-reset-platform` | Not created (no permission from this session). |
+| Repository hosting | GitHub | Branch `online-reset-platform` in `ai-solutions-nz/fix-issues`. A dedicated repository was not created (no permission from this session). |
 
 The smallest valid live test, once approved, is 120 grounded API calls (10 questions × 4 engines × Christchurch × 3 repeats). Set the keys in `.env` and add `chatgpt:openai-api:online`-style targets to `SCRAPE_TARGETS`.
 
+## Phase 2 gate (before any spend)
+
+None of these is done yet. All four must be met before any paid API call:
+
+- [ ] Gemini location handling confirmed and labelled. Gemini has no location parameter, so the location goes in the prompt text and runs record `location_applied = prompt_text`.
+- [ ] Every engine runs with web search on through its official API (`:online` targets on `openai-api`, `anthropic-api`, Gemini and Perplexity); no consumer-interface scraping.
+- [ ] The report shows the sample size and the spread across the 3 repeats for every metric.
+- [ ] The 10 paid-test questions are frozen in the repository (committed and versioned) before the test runs.
+
 ## Next implementation task
 
-Put Elmo's legacy brand pages and API routes inside `withTenant`, so that tenant isolation is database-enforced on every route. Then extend the isolation test to cover every route and MCP tool.
+The first item of the Phase 2 gate: implement and test Gemini's location handling, with runs labelled `location_applied = prompt_text`.

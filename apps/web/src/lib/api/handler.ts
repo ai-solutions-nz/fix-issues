@@ -8,9 +8,11 @@
  */
 
 import { getDeployment } from "@workspace/deployment";
+import { withTenantOrSystem } from "@workspace/lib/db/tenant";
 import { WriteDeniedError } from "@workspace/lib/entitlements";
 import type { z } from "zod";
 import { type ApiAuth, type ApiAuthFailure, principalScopes, resolveApiAuth } from "@/lib/auth/api-auth";
+import { tenantScopeForPrincipal } from "@/lib/auth/tenant-scope";
 import type { ApiScope } from "./scopes";
 
 /** A union rather than an enum in the spec, so a generated client does not
@@ -167,7 +169,10 @@ export function createApiHandler<P = Record<string, string>, B = undefined>(opts
 		if ("response" in parsed) return withRateLimit(parsed.response, auth);
 
 		try {
-			const result = await opts.handle({ params: parsed.params, body: parsed.body, request, auth });
+			// Online Reset: the handler's queries run under the key's tenant scope, enforced by Postgres RLS.
+			const result = await withTenantOrSystem(tenantScopeForPrincipal(auth), () =>
+				opts.handle({ params: parsed.params, body: parsed.body, request, auth }),
+			);
 			const response = result instanceof Response ? result : Response.json(result, { status: opts.status ?? 200 });
 			return withRateLimit(response, auth);
 		} catch (err) {

@@ -274,6 +274,13 @@
       "when": 1794071428247,
       "tag": "0038_or_publication_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794524194525,
+      "tag": "0039_or_tenant_multi_org",
+      "breakpoints": true
     }
   ]
 }

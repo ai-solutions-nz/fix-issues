@@ -4,9 +4,12 @@
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { withTenantOrSystem } from "@workspace/lib/db/tenant";
 import { ApiError } from "@/lib/api/handler";
 import type { Principal } from "@/lib/auth/api-auth";
+import { tenantScopeForPrincipal } from "@/lib/auth/tenant-scope";
 import { type McpTool, toolsFor } from "./tools";
+import type { McpToolContext } from "./tools/define";
 
 export const MCP_SERVER_INFO = {
 	name: "elmo",
@@ -43,6 +46,15 @@ function isWriteDenied(err: unknown): err is Error {
 	return err instanceof Error && err.name === "WriteDeniedError";
 }
 
+/** Online Reset: every tool runs under the connection's tenant scope, enforced by Postgres RLS. */
+export function runToolInTenant(
+	tool: McpTool,
+	context: McpToolContext,
+	args: Record<string, unknown>,
+): Promise<unknown> {
+	return withTenantOrSystem(tenantScopeForPrincipal(context.auth), () => tool.run(context, args));
+}
+
 export function createMcpServer(auth: Principal, tools: readonly McpTool[]): McpServer {
 	const server = new McpServer(MCP_SERVER_INFO, { instructions: INSTRUCTIONS });
 	const context = { auth, toolNames: tools.map((tool) => tool.name) };
@@ -64,7 +76,7 @@ export function createMcpServer(auth: Principal, tools: readonly McpTool[]): Mcp
 			},
 			async (args: Record<string, unknown>) => {
 				try {
-					const result = await tool.run(context, args);
+					const result = await runToolInTenant(tool, context, args);
 					// Text rather than `structuredContent`: an output schema per tool is a
 					// second copy of what `/api/v1` already publishes.
 					return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };

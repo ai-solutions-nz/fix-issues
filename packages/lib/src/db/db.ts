@@ -25,7 +25,12 @@ type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
  * `or_tenant` role. Code that imports `db` therefore gets database-enforced
  * isolation without being rewritten.
  */
-export const tenantContext = new AsyncLocalStorage<{ tx: Tx; organizationId: string }>();
+export const tenantContext = new AsyncLocalStorage<{
+	tx: Tx;
+	organizationId: string;
+	organizationIds: string[];
+	brandIds?: string[];
+}>();
 
 const baseDb = createDb(process.env.DATABASE_URL!);
 

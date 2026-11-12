@@ -17,7 +17,7 @@ import {
 import { admin, customSession, jwt, organization } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import type { JWTPayload } from "jose";
-import { db } from "../db/db";
+import { serviceDb } from "../db/db";
 import * as schema from "../db/schema";
 import { nativeClientRegistrationDefault } from "./native-client-registration";
 import { ac, adminRole, clientRole, memberRole, ownerRole, userRole } from "./permissions";
@@ -108,7 +108,8 @@ export function createAuth(options?: CreateAuthOptions) {
 	}
 
 	return betterAuth({
-		database: drizzleAdapter(db, {
+		// Online Reset: sessions and accounts are system data, never read in a tenant transaction.
+		database: drizzleAdapter(serviceDb, {
 			provider: "pg",
 			schema,
 		}),
