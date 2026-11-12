@@ -2,9 +2,11 @@
  * Picking a URL-safe name nothing else answers to, and surviving the race
  * between checking that and writing it.
  */
+
+import { randomBytes } from "node:crypto";
 import { and, eq, inArray, ne, or } from "drizzle-orm";
 import { MAX_SLUG_LENGTH } from "../app-urls";
-import { db } from "./db";
+import { db, serviceDb } from "./db";
 import type { DbConnection } from "./db-connection";
 import { brands, organization } from "./schema";
 
@@ -42,8 +44,11 @@ export function firstUnused(candidates: string[], taken: Set<string>): string {
  * `excludeOrgId` is applied in the query, not to the result, so a rename can't
  * mask another row that answers to the same name.
  */
-async function takenOrgNames(candidates: string[], conn: DbConnection, excludeOrgId?: string): Promise<Set<string>> {
-	const rows = await conn
+async function takenOrgNames(candidates: string[], _conn: DbConnection, excludeOrgId?: string): Promise<Set<string>> {
+	// Online Reset: slugs are one instance-wide namespace, but a tenant connection
+	// sees only its own organizations, so the check reads the system handle. The
+	// unique index stays the guarantee; this answers only "taken or not".
+	const rows = await serviceDb
 		.select({ id: organization.id, slug: organization.slug })
 		.from(organization)
 		.where(
@@ -105,9 +110,13 @@ export const claimBrandSlug = <T>(write: () => Promise<T>, takenMessage: string)
 export const claimNewBrandSlug = <T>(write: () => Promise<T>): Promise<T> =>
 	claimBrandSlug(write, "Brand creation failed due to a concurrent create — please retry");
 
-export async function findUnusedBrandId(baseSlug: string, conn: DbConnection = db): Promise<string> {
-	const candidates = nameCandidates(baseSlug);
-	return firstUnused(candidates, await takenBrandNames(candidates, conn));
+/**
+ * Online Reset: brand ids are global but a tenant sees only its own brands, so a
+ * name-based id would either collide with another tenant's (a 500) or, checked
+ * on the system handle, reveal that one exists. A random suffix does neither.
+ */
+export function newBrandId(baseSlug: string): string {
+	return `${baseSlug.slice(0, 60)}-${randomBytes(4).toString("hex")}`;
 }
 
 export async function isOrgSlugAvailable(

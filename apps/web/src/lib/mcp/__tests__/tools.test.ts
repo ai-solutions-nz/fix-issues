@@ -36,6 +36,9 @@ const oauthSession: UserAuth = {
 	email: "someone@example.com",
 	name: "Someone",
 	organizationIds: ["org_1"],
+	brandIds: null,
+	restrictedOrganizationIds: [],
+	adminOrganizationIds: ["org_1"],
 	clientId: "client_1",
 	expiresAt: null,
 };

@@ -1,7 +1,12 @@
 /** Beside the schema to avoid type mismatches between packages' drizzle-orm resolutions. */
 
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db } from "./db";
+import { serviceDb } from "./db";
+
+// Online Reset: syncing memberships from the identity provider is a system
+// operation (it adds memberships the request's tenant scope cannot see yet).
+const db = serviceDb;
+
 import { account, member, organization, user } from "./schema";
 
 type AuthSyncTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];

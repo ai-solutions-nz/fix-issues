@@ -281,6 +281,13 @@
       "when": 1794524194525,
       "tag": "0039_or_tenant_multi_org",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794525952188,
+      "tag": "0040_or_tenant_narrow_roles",
+      "breakpoints": true
     }
   ]
 }

@@ -5,8 +5,9 @@ import { EncryptionKeyError, encryptSecret } from "./crypto";
 // store is testable with no database. `db.select().from()` resolves to
 // `dbState.rows`, or rejects with `dbState.error` when one is set.
 const dbState = vi.hoisted(() => ({ rows: [] as unknown[], error: null as Error | null, queries: 0 }));
+// Online Reset: the store reads secrets on the system handle.
 vi.mock("../db/db", () => ({
-	db: {
+	serviceDb: {
 		select: () => ({
 			from: () => {
 				dbState.queries++;

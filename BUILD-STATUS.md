@@ -6,11 +6,11 @@ _Last updated: 2026-11-12. Current milestone: **5 (reporting and platform QA)**.
 
 ```bash
 pnpm install
-pnpm test                                    # 2,008 unit tests (9 packages)
+pnpm test                                    # 2,009 unit tests (8 packages)
 TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/elmo_test \
-  pnpm -C packages/lib test:integration      # 54 Postgres tests
-# same for apps/worker (34) and apps/web (212)
-pnpm lint                                    # Biome, 881 files, 0 errors
+  pnpm -C packages/lib test:integration      # 74 Postgres tests
+# same for apps/worker (34) and apps/web (168)
+pnpm lint                                    # Biome, 884 files, 0 errors
 DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Christchurch demo
 ```
 
@@ -27,6 +27,7 @@ DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Chr
 | **M1 Foundation** | Elmo fork; PostHog telemetry removed (worker, CLI, web fallback key); upstream-only workflows removed (including the scheduled live-provider job that spent API credit); research imported into `docs/research/`. | Baseline: 1,974 unit + 63 integration Elmo tests passed before any change. |
 | M1 Tenant isolation | `or_tenant` role, row-level-security (RLS) policy per table derived from its tenancy column (deny by default), `withTenant()`, the shared `db` handle follows the tenant transaction, `client` role limited to granted brands. | `packages/lib/src/db/tenant.integration.test.ts` (9 tests): cross-tenant reads return nothing, writes are rejected, untenanted tables are denied, every keyed table has a policy. `or/tenant-scope.integration.test.ts` (3). |
 | M1 Database isolation on every route | Every legacy Elmo entry point runs inside a tenant transaction, so Postgres RLS bounds it even if an application check were missed. **Server functions** (all pages, including Overview, Visibility, Citations, Share of Voice, Sentiment, Responses, Query Fan-Out, Opportunities and Settings): a global TanStack function middleware (`middleware/tenant.ts`, registered after auth in `start.ts`) scopes each signed-in user to their organizations, or to granted brands for the `client` role. **REST `/api/v1`**: `createApiHandler` runs every handler under the API key's reach. **MCP**: every tool runs through `runToolInTenant`. RLS now accepts several organizations, and covers `user`, `apikey`, `subscription` and `cited_pages` (migration `0039`). better-auth uses the unscoped connection for sessions and accounts. | `apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts` (147 tests). The caller's application-level checks are opened up (instance-admin principal) while the database is pinned to tenant A. Every REST route and verb (25 route files) and every MCP tool (17) is then pointed at tenant B's ids: no tenant B data appears in any response, tenant B's rows are unchanged after every write, and every write into tenant B is refused. Positive controls show tenant A's own data is still served. **Negative control:** the same suite at system scope fails 19 tests (leaks and successful writes into tenant B), which shows the database is what blocks them. Also covered: global middleware registration, and scope resolution for members, clients, non-members and instance admins. |
+| M1 Isolation fixes (Packet 1b, from Neo's review of `9e8ce82`) | (1) A `client` user over MCP (OAuth) now gets the same scope as on the web pages: one builder, `userTenantScope` in `packages/lib/src/or/tenant-scope.ts`, feeds both, so the principal carries the brand restriction. (2) The tenant handle closes when its transaction ends: a query that outlives the request throws `TenantTransactionClosedError` instead of running on a pooled connection that may be serving another tenant. (3) Fixed under the tenant scope: organization rename, the MCP consent page, accepting an invitation, and brand creation (brand ids are now random, so they cannot collide with, or reveal, another tenant's brand). Also fixed, found while doing this: creating an organization, and syncing memberships from Auth0. (4) Organization and brand ids must be letters, digits, `-` or `_` (API schemas and `withTenant`). (6) Signed-out server functions run in an empty scope; four named functions are allowlisted for system scope (`middleware/tenant.ts`). (9) Migration `0040`: `apikey`, `subscription` and `member` are read-only to every tenant; API keys and the subscription are hidden from `client` users and brand-scoped keys; only an owner or admin may rename an organization, and only its name and slug. Plans are still worked out for client users (entitlements read the subscription on the system handle). | `packages/lib/src/db/tenant-roles.integration.test.ts` (20 tests), including a stray tenant A query fired inside tenant B's transaction. With the closed-handle guard removed, two of these fail and the stray query reads tenant B's brand. `apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts` (13 tests): signs in over MCP as a real `client` user (only the OAuth signature check is stubbed) and as owner, member and newcomer through the real middleware function. (10) The isolation suite is now strict (90 tests): exact counts (25 route files, 17 tools, 38 endpoints; method guards excluded, and a 405 always fails); every endpoint has a declared expected outcome; only an isolation refusal passes (404 not found, a "not found" 400, or a 500 whose cause is Postgres SQLSTATE 42501); there is a positive tenant A check for every route group and 12 tools. Negative control at system scope: 40 failures (was 19). |
 | M1 Audit log | Append-only `or_audit_log`; a trigger rejects update and delete. Every workflow step writes to it. | Isolation suite; the optimisation suite asserts the full action sequence. |
 | M1 Credentials | CMS secrets encrypted with Elmo's AES-GCM keyring, bound to their row (AAD), and decrypted only in memory. | Optimisation suite asserts no plaintext is stored. |
 | **M2 Evidence model** | Every run stores collection method, requested and applied location, methodology version, model, timestamp and immutable raw output. Metrics refuse to mix methods. | `or-core/measurement.test.ts`, `lib/or/collection.test.ts`. |
@@ -101,14 +102,16 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 - Web sidebar, logo, sales panel, `route-head.ts`, `vite.config.ts` (`optimizeDeps` exclude).
 - `start.ts` (tenant middleware), `lib/api/handler.ts` and `lib/mcp/server.ts` (tenant scope), `packages/lib/src/auth/server.ts` (better-auth on the unscoped connection).
 - Telemetry modules.
+- Packet 1b: `packages/lib/src/db/{db,tenant,unique-names,provisioning,auth-sync}.ts`, migration `0040_or_tenant_narrow_roles.sql`, `or/tenant-scope.ts` (`userTenantScope`), `entitlements/service.ts`, `secrets/store.ts`; web `middleware/tenant.ts`, `lib/auth/{api-auth,tenant-scope}.ts`, `lib/mcp/auth.ts`, `server/signed-in-core.ts` (new) and the server functions that call it (`organizations.ts`, `mcp-clients.ts`, `team.ts`, `brands.ts`), `server/onboarding-core.ts`.
 
 ## Tests performed (latest run, all passing)
 
-- **Unit:** 2,008.
-  - or-core 72, lib 830, web 747, config 153, cli 89, deployment 64, site-audit 38, worker 15.
-- **Integration (Postgres 16):** 300.
-  - lib 54, worker 34, web 212 (includes the 147-test tenant isolation suite).
-- **Lint:** Biome over 881 files, 0 errors.
+- **Unit:** 2,009.
+  - or-core 72, lib 830, web 748, config 153, cli 89, deployment 64, site-audit 38, worker 15.
+- **Integration (Postgres 16):** 276.
+  - lib 74, worker 34, web 168. Web includes the strict 90-test isolation suite and 13 signed-in tests.
+  - The total is lower than Packet 1's 300 because the isolation suite no longer counts 57 method-guard (405) cases as isolation tests.
+- **Lint:** Biome over 884 files, 0 errors.
 - **Type checks:** all packages, including the NodeNext worker.
 - **Production build:** `vite build` succeeded.
 - **Browser smoke test** (local dev server) covered:
@@ -122,12 +125,238 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 
 ## Known bugs and limitations
 
-- **Where database tenant scope does not apply.** Requests with no session (sign-up, sign-in, setup status) run at system scope, as before, and serve no tenant data. The same is true of instance administrators (a user with the `admin` role, or an instance admin API key) and of the background worker, which is system work. Server functions are covered by the global middleware; the isolation suite verifies that registration and the scope it applies, but it calls the REST routes and MCP tools individually, not each of the ~118 server functions. Those functions use the same core query modules the REST routes and MCP tools exercise.
+- **Where database tenant scope does not apply.** Requests with no session run in an empty scope (no tenant rows), except four allowlisted functions (client config, environment validation state, the session itself, the consent region), which run at system scope and serve no tenant data. Instance administrators (a user with the `admin` role, or an instance admin API key) and of the background worker, which is system work. Server functions are covered by the global middleware; the isolation suite verifies that registration and the scope it applies, but it calls the REST routes and MCP tools individually, not each of the ~118 server functions. Those functions use the same core query modules the REST routes and MCP tools exercise.
 - **Elmo branding remains in places.** About 60 references remain, including email templates, the version label, docs and GitHub links in the footer, the CLI and the floating dev widget. Per-tenant branding and custom domains are not built; Elmo's white-label mode is per-instance.
 - **"Publish" uses the brand's first CMS connection.** There is no UI to add or manage CMS connections, edit the brand profile, invite client users or grant them brands. These are currently set up through the service functions or the demo script.
 - **The demo's mock WordPress stops when the demo exits.** Publishing from the UI afterwards fails, and the failure is recorded as `failed`, until a real or mock CMS is connected.
 - **Embeddings are lexical, not semantic.** Question clustering uses a free, deterministic hash embedding stored as `real[]`; pgvector and model embeddings are not wired. As a result, paraphrases that share no words are not merged.
 - **Sentiment is not judged** unless a paid judge (TypeSafe or OpenRouter) is configured.
+
+## Known limitations (recorded from Neo's review of `9e8ce82`; not fixed in Packet 1b)
+
+- **(5) Raw SQL has not been audited.** Hand-written SQL (`sql` template literals passed to `execute`) runs under the same tenant role and policies, so it cannot bypass RLS, but it has not been reviewed query by query. In particular, nothing checks whether a raw query calls a `SECURITY DEFINER` helper in a way that widens what it returns.
+- **(7) Nested scope is coarse.** A nested `withTenant` whose scope lies within the open one reuses the outer transaction, so it does not narrow it: inner code still sees everything the outer scope sees. A nested call with a wider or different scope is refused. Narrowing would need `SET LOCAL` save and restore around the inner call.
+- **(8) Pool and transaction risks.**
+  - Every scoped request holds one pooled connection for its whole duration, including signed-out requests, which now open an empty-scope transaction. Long requests (streaming, slow outbound calls inside a server function) can therefore exhaust the pool.
+  - A stray query after the transaction ends now throws; work deliberately detached from a request must use `serviceDb` or open its own `withTenant`.
+  - Code that reads `serviceDb` while a tenant transaction is open uses a second connection, so it cannot see that transaction's uncommitted writes.
+  - Not tested against PgBouncer in transaction mode (`SET LOCAL` and `set_config(..., true)` are transaction-scoped, which should be compatible, but this is unverified).
+- **(11) `cited_pages` policy performance.** `or_page_visible()` runs two `EXISTS` subqueries per row (rollups and citations, each calling `or_brand_visible`). This is correct, but it is not benchmarked and could be slow on large citation tables. An index review or a materialized brand-to-page map may be needed.
+- **(12) The app's database login must be a member of `or_tenant`.** `SET LOCAL ROLE or_tenant` fails unless the login role used by `DATABASE_URL` has been granted membership (`GRANT or_tenant TO <app_login>`). The tests connect as the `postgres` superuser, which may `SET ROLE` without a grant, so they do not catch a missing grant. Deployment scripts do not yet grant the membership or check for it at startup.
+- **Reports for non-admin report-generator users.** The `reports` table has no tenant column. Under tenant scope it is denied: the `/api/v1/reports` routes are instance-admin-only (system scope), but the web reports pages for a non-admin user with report-generator access now fail with permission denied. Not fixed: it needs a decision on whether reports become tenant-owned.
+- **Billing page data for restricted users.** Entitlements read the subscription on the system handle, so the plan still applies to `client` users. The billing server functions return subscription details to whoever passes their own (app-level) checks; this has not been re-reviewed for the `client` role.
+
+<details>
+<summary><code>rg -n "serviceDb" apps packages</code> (202 lines, sorted by path, 2026-11-12, after Packet 1b)</summary>
+
+All non-test production uses are system work: better-auth, provisioning, Auth0 membership sync, the secrets store, entitlement plans, the scope builders, the global slug check, the consent page's OAuth client lookup, the post-invitation slug read, the worker, and the demo script.
+
+```
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:8:import { db, serviceDb } from "@workspace/lib/db/db";
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:53:	await serviceDb.delete(oauthClient).where(eq(oauthClient.clientId, OAUTH_CLIENT));
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:54:	await serviceDb.delete(orMemberBrandAccess).where(inArray(orMemberBrandAccess.organizationId, orgs));
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:55:	await serviceDb.delete(brands).where(inArray(brands.organizationId, orgs));
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:56:	await serviceDb.delete(member).where(inArray(member.userId, ALL_USERS));
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:57:	await serviceDb.delete(organization).where(inArray(organization.id, orgs));
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:58:	await serviceDb.delete(user).where(inArray(user.id, ALL_USERS));
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:64:	await serviceDb.insert(organization).values([
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:68:	await serviceDb
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:71:	await serviceDb.insert(member).values([
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:76:	await serviceDb.insert(brands).values([
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:81:	await serviceDb.insert(orMemberBrandAccess).values({ organizationId: ORG_A, userId: CLIENT, brandId: BRAND_GRANTED });
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:82:	await serviceDb.insert(oauthClient).values({
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:158:		const [row] = await serviceDb.select().from(organization).where(eq(organization.id, ORG_A));
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:188:			await serviceDb.insert(member).values({
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:211:		const [row] = await serviceDb.select().from(brands).where(eq(brands.id, created.brandId));
+apps/web/src/lib/__tests__/signed-in-tenant.integration.test.ts:220:		const [membership] = await serviceDb
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:17:import { serviceDb } from "@workspace/lib/db/db";
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:127:	const rows = await serviceDb.execute(sql`
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:139:	await serviceDb.delete(citations).where(inArray(citations.brandId, brandIds));
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:140:	await serviceDb.execute(sql`DELETE FROM prompt_runs WHERE brand_id IN (${BRAND_A}, ${BRAND_B})`);
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:141:	await serviceDb.delete(prompts).where(inArray(prompts.brandId, brandIds));
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:142:	await serviceDb.delete(competitors).where(inArray(competitors.brandId, brandIds));
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:143:	await serviceDb.delete(orMemberBrandAccess).where(inArray(orMemberBrandAccess.organizationId, [ORG_A, ORG_B]));
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:144:	await serviceDb.delete(brands).where(inArray(brands.id, brandIds));
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:145:	await serviceDb.delete(member).where(inArray(member.organizationId, [ORG_A, ORG_B]));
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:146:	await serviceDb.delete(organization).where(inArray(organization.id, [ORG_A, ORG_B]));
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:147:	await serviceDb.delete(user).where(inArray(user.id, [USER_A, USER_CLIENT]));
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:153:	await serviceDb.insert(organization).values([
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:157:	await serviceDb.insert(user).values([
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:161:	await serviceDb.insert(member).values([
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:165:	await serviceDb.insert(brands).values([
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:181:	await serviceDb.insert(orMemberBrandAccess).values({ organizationId: ORG_A, userId: USER_CLIENT, brandId: BRAND_A });
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:182:	const [ca] = await serviceDb
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:186:	const [cb] = await serviceDb
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:192:	await serviceDb.insert(prompts).values([
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:202:	await insertRuns(serviceDb, [
+apps/web/src/lib/__tests__/tenant-isolation.integration.test.ts:230:	await serviceDb.insert(citations).values({
+apps/web/src/lib/mcp/__tests__/auth.test.ts:36:		serviceDb: {
+apps/web/src/lib/mcp/__tests__/tenancy.test.ts:45:	return { db: chain, serviceDb: chain };
+apps/web/src/lib/mcp/auth.ts:4:import { serviceDb } from "@workspace/lib/db/db";
+apps/web/src/lib/mcp/auth.ts:70:		serviceDb
+apps/web/src/lib/mcp/auth.ts:75:		serviceDb
+apps/web/src/server/signed-in-core.ts:6:import { db, serviceDb } from "@workspace/lib/db/db";
+apps/web/src/server/signed-in-core.ts:45:	const [client] = await serviceDb
+apps/web/src/server/signed-in-core.ts:65:	const [row] = await serviceDb
+apps/worker/scripts/or-demo.ts:20:import { serviceDb } from "@workspace/lib/db/db";
+apps/worker/scripts/or-demo.ts:60:	await serviceDb
+apps/worker/scripts/or-demo.ts:64:	await serviceDb
+apps/worker/scripts/or-demo.ts:75:	await serviceDb
+apps/worker/scripts/or-demo.ts:79:	await serviceDb
+apps/worker/scripts/or-demo.ts:93:	const existingRivals = await serviceDb.select().from(competitors).where(eq(competitors.brandId, BRAND_ID));
+apps/worker/scripts/or-demo.ts:95:		await serviceDb.insert(competitors).values(
+apps/worker/scripts/or-demo.ts:104:			await serviceDb
+apps/worker/scripts/or-demo.ts:116:	const questionRows = await serviceDb.select().from(prompts).where(eq(prompts.brandId, BRAND_ID));
+apps/worker/scripts/or-demo.ts:128:	const runs = await serviceDb.select({ id: promptRuns.id }).from(promptRuns).where(eq(promptRuns.brandId, BRAND_ID));
+apps/worker/scripts/or-demo.ts:130:		await deriveRuns({ brandId: BRAND_ID, runIds: runs.slice(i, i + 50).map((r) => r.id) }, serviceDb, noopBoss);
+apps/worker/scripts/or-demo.ts:190:	const retestPrompts = await serviceDb
+apps/worker/scripts/or-demo.ts:206:		(await serviceDb.select({ id: promptRuns.id }).from(promptRuns).where(eq(promptRuns.brandId, BRAND_ID))).map(
+apps/worker/scripts/or-demo.ts:212:		await serviceDb.select({ id: promptRuns.id }).from(promptRuns).where(eq(promptRuns.brandId, BRAND_ID))
+apps/worker/scripts/or-demo.ts:214:	if (newRuns.length) await deriveRuns({ brandId: BRAND_ID, runIds: newRuns.map((r) => r.id) }, serviceDb, noopBoss);
+apps/worker/scripts/or-demo.ts:254:		await serviceDb.$client.end();
+apps/worker/src/or-jobs.ts:1:import { serviceDb } from "@workspace/lib/db/db";
+apps/worker/src/or-jobs.ts:28:	const rows = await serviceDb
+apps/worker/src/or-jobs.ts:44:		await runBrandAudit(serviceDb, job.data.brandId);
+apps/worker/src/or-jobs.ts:45:		await refreshOpportunities(serviceDb, job.data.brandId);
+packages/lib/src/auth/server.ts:20:import { serviceDb } from "../db/db";
+packages/lib/src/auth/server.ts:112:		database: drizzleAdapter(serviceDb, {
+packages/lib/src/db/auth-sync.ts:4:import { serviceDb } from "./db";
+packages/lib/src/db/auth-sync.ts:8:const db = serviceDb;
+packages/lib/src/db/db.ts:47:export const serviceDb: Db = baseDb;
+packages/lib/src/db/provisioning.ts:3:import { serviceDb } from "./db";
+packages/lib/src/db/provisioning.ts:7:const db = serviceDb;
+packages/lib/src/db/tenant-roles.integration.test.ts:8:import { db, serviceDb, TenantTransactionClosedError } from "./db";
+packages/lib/src/db/tenant-roles.integration.test.ts:19:	await serviceDb.delete(apikey).where(inArray(apikey.referenceId, [ORG_A, ORG_B]));
+packages/lib/src/db/tenant-roles.integration.test.ts:20:	await serviceDb.delete(subscription).where(inArray(subscription.referenceId, [ORG_A, ORG_B]));
+packages/lib/src/db/tenant-roles.integration.test.ts:21:	await serviceDb.delete(member).where(inArray(member.organizationId, [ORG_A, ORG_B]));
+packages/lib/src/db/tenant-roles.integration.test.ts:22:	await serviceDb.delete(brands).where(inArray(brands.id, [BRAND_A, BRAND_B]));
+packages/lib/src/db/tenant-roles.integration.test.ts:23:	await serviceDb.delete(organization).where(inArray(organization.id, [ORG_A, ORG_B]));
+packages/lib/src/db/tenant-roles.integration.test.ts:24:	await serviceDb.delete(user).where(eq(user.id, USER));
+packages/lib/src/db/tenant-roles.integration.test.ts:29:	await serviceDb.insert(organization).values([
+packages/lib/src/db/tenant-roles.integration.test.ts:33:	await serviceDb.insert(user).values({ id: USER, name: "Roles User", email: "roles@tenant-a.example" });
+packages/lib/src/db/tenant-roles.integration.test.ts:34:	await serviceDb
+packages/lib/src/db/tenant-roles.integration.test.ts:37:	await serviceDb.insert(brands).values([
+packages/lib/src/db/tenant-roles.integration.test.ts:42:	await serviceDb
+packages/lib/src/db/tenant-roles.integration.test.ts:45:	await serviceDb
+packages/lib/src/db/tenant-roles.integration.test.ts:193:		const [row] = await serviceDb
+packages/lib/src/db/tenant-roles.integration.test.ts:201:		const missing = await serviceDb.execute(sql`
+packages/lib/src/db/tenant.integration.test.ts:3:import { db, serviceDb } from "./db";
+packages/lib/src/db/tenant.integration.test.ts:23:	await serviceDb.execute(sql`ALTER TABLE or_audit_log DISABLE TRIGGER or_audit_log_append_only`);
+packages/lib/src/db/tenant.integration.test.ts:24:	await serviceDb.delete(orAuditLog).where(inArray(orAuditLog.organizationId, [ORG_A, ORG_B]));
+packages/lib/src/db/tenant.integration.test.ts:25:	await serviceDb.execute(sql`ALTER TABLE or_audit_log ENABLE TRIGGER or_audit_log_append_only`);
+packages/lib/src/db/tenant.integration.test.ts:26:	await serviceDb.delete(citations).where(inArray(citations.brandId, brandIds));
+packages/lib/src/db/tenant.integration.test.ts:27:	await serviceDb.execute(
+packages/lib/src/db/tenant.integration.test.ts:33:	await serviceDb.delete(orBrandProfiles).where(inArray(orBrandProfiles.brandId, brandIds));
+packages/lib/src/db/tenant.integration.test.ts:34:	await serviceDb.delete(prompts).where(inArray(prompts.brandId, brandIds));
+packages/lib/src/db/tenant.integration.test.ts:35:	await serviceDb.delete(brands).where(inArray(brands.id, brandIds));
+packages/lib/src/db/tenant.integration.test.ts:36:	await serviceDb.delete(organization).where(inArray(organization.id, [ORG_A, ORG_B]));
+packages/lib/src/db/tenant.integration.test.ts:41:	await serviceDb.insert(organization).values([
+packages/lib/src/db/tenant.integration.test.ts:45:	await serviceDb.insert(brands).values([
+packages/lib/src/db/tenant.integration.test.ts:50:	await serviceDb.insert(prompts).values([
+packages/lib/src/db/tenant.integration.test.ts:55:	await insertRuns(serviceDb, [
+packages/lib/src/db/tenant.integration.test.ts:130:		const [b] = await serviceDb.select({ name: brands.name }).from(brands).where(eq(brands.id, BRAND_B));
+packages/lib/src/db/tenant.integration.test.ts:153:		const rows = await serviceDb.transaction(async (tx) => {
+packages/lib/src/db/tenant.integration.test.ts:167:		const result = await serviceDb.execute<{ table_name: string }>(sql`
+packages/lib/src/db/tenant.integration.test.ts:192:			serviceDb.update(orAuditLog).set({ action: "rewritten" }).where(eq(orAuditLog.organizationId, ORG_A)),
+packages/lib/src/db/tenant.ts:2:import { serviceDb, TenantTransactionClosedError, tenantContext } from "./db";
+packages/lib/src/db/tenant.ts:22:type Tx = Parameters<Parameters<typeof serviceDb.transaction>[0]>[0];
+packages/lib/src/db/tenant.ts:68:	return serviceDb.transaction(async (tx) => {
+packages/lib/src/db/unique-names.ts:9:import { db, serviceDb } from "./db";
+packages/lib/src/db/unique-names.ts:51:	const rows = await serviceDb
+packages/lib/src/entitlements/service.ts:12:import { db, serviceDb } from "../db/db";
+packages/lib/src/entitlements/service.ts:114:		(options?.conn ?? serviceDb).select().from(subscription).where(inArray(subscription.referenceId, orgIds)),
+packages/lib/src/or/audit-service.integration.test.ts:4:import { serviceDb } from "../db/db";
+packages/lib/src/or/audit-service.integration.test.ts:18:	await serviceDb.execute(sql`ALTER TABLE or_audit_log DISABLE TRIGGER or_audit_log_append_only`);
+packages/lib/src/or/audit-service.integration.test.ts:19:	await serviceDb.delete(orAuditLog).where(eq(orAuditLog.organizationId, ORG));
+packages/lib/src/or/audit-service.integration.test.ts:20:	await serviceDb.execute(sql`ALTER TABLE or_audit_log ENABLE TRIGGER or_audit_log_append_only`);
+packages/lib/src/or/audit-service.integration.test.ts:21:	await serviceDb.delete(orOpportunities).where(eq(orOpportunities.brandId, BRAND));
+packages/lib/src/or/audit-service.integration.test.ts:22:	await serviceDb.delete(orAuditRuns).where(eq(orAuditRuns.brandId, BRAND));
+packages/lib/src/or/audit-service.integration.test.ts:23:	await serviceDb.delete(citations).where(eq(citations.brandId, BRAND));
+packages/lib/src/or/audit-service.integration.test.ts:24:	await serviceDb.execute(sql`DELETE FROM prompt_runs WHERE brand_id = ${BRAND}`);
+packages/lib/src/or/audit-service.integration.test.ts:25:	await serviceDb.delete(orPromptMeta).where(eq(orPromptMeta.brandId, BRAND));
+packages/lib/src/or/audit-service.integration.test.ts:26:	await serviceDb.delete(prompts).where(eq(prompts.brandId, BRAND));
+packages/lib/src/or/audit-service.integration.test.ts:27:	await serviceDb.delete(competitors).where(eq(competitors.brandId, BRAND));
+packages/lib/src/or/audit-service.integration.test.ts:28:	await serviceDb.delete(orBrandProfiles).where(eq(orBrandProfiles.brandId, BRAND));
+packages/lib/src/or/audit-service.integration.test.ts:29:	await serviceDb.delete(brands).where(eq(brands.id, BRAND));
+packages/lib/src/or/audit-service.integration.test.ts:30:	await serviceDb.delete(organization).where(eq(organization.id, ORG));
+packages/lib/src/or/audit-service.integration.test.ts:42:	await serviceDb
+packages/lib/src/or/audit-service.integration.test.ts:45:	await serviceDb.insert(brands).values({
+packages/lib/src/or/audit-service.integration.test.ts:52:	await serviceDb.insert(orBrandProfiles).values({
+packages/lib/src/or/audit-service.integration.test.ts:62:	await serviceDb
+packages/lib/src/or/audit-service.integration.test.ts:92:		const log = await serviceDb
+packages/lib/src/or/audit-service.integration.test.ts:100:		const [p] = await serviceDb
+packages/lib/src/or/audit-service.integration.test.ts:104:		await serviceDb
+packages/lib/src/or/audit-service.integration.test.ts:107:		const saved = await insertRuns(serviceDb, [
+packages/lib/src/or/audit-service.integration.test.ts:120:		await serviceDb.insert(citations).values({
+packages/lib/src/or/audit-service.integration.test.ts:139:		await serviceDb
+packages/lib/src/or/audit-service.integration.test.ts:144:		const [row] = await serviceDb
+packages/lib/src/or/optimisation.integration.test.ts:4:import { serviceDb } from "../db/db";
+packages/lib/src/or/optimisation.integration.test.ts:44:	await serviceDb.execute(sql`ALTER TABLE or_audit_log DISABLE TRIGGER or_audit_log_append_only`);
+packages/lib/src/or/optimisation.integration.test.ts:45:	await serviceDb.delete(orAuditLog).where(eq(orAuditLog.organizationId, ORG));
+packages/lib/src/or/optimisation.integration.test.ts:46:	await serviceDb.execute(sql`ALTER TABLE or_audit_log ENABLE TRIGGER or_audit_log_append_only`);
+packages/lib/src/or/optimisation.integration.test.ts:47:	await serviceDb.delete(orPublications).where(eq(orPublications.brandId, BRAND));
+packages/lib/src/or/optimisation.integration.test.ts:48:	await serviceDb.delete(orApprovals).where(eq(orApprovals.brandId, BRAND));
+packages/lib/src/or/optimisation.integration.test.ts:49:	await serviceDb.delete(orContentItems).where(eq(orContentItems.brandId, BRAND));
+packages/lib/src/or/optimisation.integration.test.ts:50:	await serviceDb.delete(orCmsConnections).where(eq(orCmsConnections.brandId, BRAND));
+packages/lib/src/or/optimisation.integration.test.ts:51:	await serviceDb.delete(orOpportunities).where(eq(orOpportunities.brandId, BRAND));
+packages/lib/src/or/optimisation.integration.test.ts:52:	await serviceDb.execute(sql`DELETE FROM prompt_runs WHERE brand_id = ${BRAND}`);
+packages/lib/src/or/optimisation.integration.test.ts:53:	await serviceDb.delete(prompts).where(eq(prompts.brandId, BRAND));
+packages/lib/src/or/optimisation.integration.test.ts:54:	await serviceDb.delete(orBrandProfiles).where(eq(orBrandProfiles.brandId, BRAND));
+packages/lib/src/or/optimisation.integration.test.ts:55:	await serviceDb.delete(brands).where(eq(brands.id, BRAND));
+packages/lib/src/or/optimisation.integration.test.ts:56:	await serviceDb.delete(organization).where(eq(organization.id, ORG));
+packages/lib/src/or/optimisation.integration.test.ts:63:	await serviceDb
+packages/lib/src/or/optimisation.integration.test.ts:66:	await serviceDb.insert(brands).values({
+packages/lib/src/or/optimisation.integration.test.ts:72:	await serviceDb.insert(orBrandProfiles).values({
+packages/lib/src/or/optimisation.integration.test.ts:80:	const [p] = await serviceDb
+packages/lib/src/or/optimisation.integration.test.ts:85:	await insertRuns(serviceDb, [
+packages/lib/src/or/optimisation.integration.test.ts:99:	await serviceDb.insert(orOpportunities).values({
+packages/lib/src/or/optimisation.integration.test.ts:137:		const [row] = await serviceDb.select().from(orCmsConnections).where(eq(orCmsConnections.id, connectionId));
+packages/lib/src/or/optimisation.integration.test.ts:157:		const [item] = await serviceDb.select().from(orContentItems).where(eq(orContentItems.id, itemId));
+packages/lib/src/or/optimisation.integration.test.ts:174:		const [approval] = await serviceDb
+packages/lib/src/or/optimisation.integration.test.ts:178:		const forged = serviceDb.insert(orPublications).values({
+packages/lib/src/or/optimisation.integration.test.ts:211:		await insertRuns(serviceDb, [
+packages/lib/src/or/optimisation.integration.test.ts:239:			await serviceDb.select({ action: orAuditLog.action }).from(orAuditLog).where(eq(orAuditLog.organizationId, ORG))
+packages/lib/src/or/tenant-scope.integration.test.ts:3:import { serviceDb } from "../db/db";
+packages/lib/src/or/tenant-scope.integration.test.ts:18:	await serviceDb.delete(orMemberBrandAccess).where(inArray(orMemberBrandAccess.organizationId, [ORG, OTHER_ORG]));
+packages/lib/src/or/tenant-scope.integration.test.ts:19:	await serviceDb.delete(prompts).where(inArray(prompts.brandId, [BRAND_MINE, BRAND_SIBLING, BRAND_FOREIGN]));
+packages/lib/src/or/tenant-scope.integration.test.ts:20:	await serviceDb.delete(brands).where(inArray(brands.id, [BRAND_MINE, BRAND_SIBLING, BRAND_FOREIGN]));
+packages/lib/src/or/tenant-scope.integration.test.ts:21:	await serviceDb.delete(member).where(inArray(member.organizationId, [ORG, OTHER_ORG]));
+packages/lib/src/or/tenant-scope.integration.test.ts:22:	await serviceDb.delete(organization).where(inArray(organization.id, [ORG, OTHER_ORG]));
+packages/lib/src/or/tenant-scope.integration.test.ts:23:	await serviceDb.delete(user).where(inArray(user.id, [STAFF, CLIENT]));
+packages/lib/src/or/tenant-scope.integration.test.ts:28:	await serviceDb.insert(user).values([
+packages/lib/src/or/tenant-scope.integration.test.ts:32:	await serviceDb.insert(organization).values([
+packages/lib/src/or/tenant-scope.integration.test.ts:36:	await serviceDb.insert(member).values([
+packages/lib/src/or/tenant-scope.integration.test.ts:40:	await serviceDb.insert(brands).values([
+packages/lib/src/or/tenant-scope.integration.test.ts:45:	await serviceDb.insert(prompts).values([
+packages/lib/src/or/tenant-scope.integration.test.ts:49:	await serviceDb.insert(orMemberBrandAccess).values({ organizationId: ORG, userId: CLIENT, brandId: BRAND_MINE });
+packages/lib/src/or/tenant-scope.ts:2:import { serviceDb } from "../db/db";
+packages/lib/src/or/tenant-scope.ts:17:	const [row] = await serviceDb
+packages/lib/src/or/tenant-scope.ts:25:	const grants = await serviceDb
+packages/lib/src/or/tenant-scope.ts:43:	const memberships = await serviceDb
+packages/lib/src/or/tenant-scope.ts:56:		? await serviceDb.select({ id: brands.id }).from(brands).where(inArray(brands.organizationId, agencyOrgs))
+packages/lib/src/or/tenant-scope.ts:58:	const granted = await serviceDb
+packages/lib/src/or/visibility-service.integration.test.ts:3:import { serviceDb } from "../db/db";
+packages/lib/src/or/visibility-service.integration.test.ts:22:	await serviceDb.delete(citations).where(eq(citations.brandId, BRAND));
+packages/lib/src/or/visibility-service.integration.test.ts:23:	await serviceDb.execute(sql`DELETE FROM prompt_runs WHERE brand_id = ${BRAND}`);
+packages/lib/src/or/visibility-service.integration.test.ts:24:	await serviceDb.delete(orPromptMeta).where(eq(orPromptMeta.brandId, BRAND));
+packages/lib/src/or/visibility-service.integration.test.ts:25:	await serviceDb.delete(prompts).where(eq(prompts.brandId, BRAND));
+packages/lib/src/or/visibility-service.integration.test.ts:26:	await serviceDb.delete(competitors).where(eq(competitors.brandId, BRAND));
+packages/lib/src/or/visibility-service.integration.test.ts:27:	await serviceDb.delete(brands).where(eq(brands.id, BRAND));
+packages/lib/src/or/visibility-service.integration.test.ts:28:	await serviceDb.delete(organization).where(eq(organization.id, ORG));
+packages/lib/src/or/visibility-service.integration.test.ts:33:	await serviceDb
+packages/lib/src/or/visibility-service.integration.test.ts:36:	await serviceDb
+packages/lib/src/or/visibility-service.integration.test.ts:39:	await serviceDb
+packages/lib/src/or/visibility-service.integration.test.ts:50:		const meta = await serviceDb.select().from(orPromptMeta).where(eq(orPromptMeta.brandId, BRAND));
+packages/lib/src/or/visibility-service.integration.test.ts:58:		const ps = await serviceDb.select().from(prompts).where(eq(prompts.brandId, BRAND));
+packages/lib/src/or/visibility-service.integration.test.ts:63:		const saved = await insertRuns(serviceDb, [
+packages/lib/src/or/visibility-service.integration.test.ts:97:		await serviceDb.insert(citations).values({
+packages/lib/src/or/visibility-service.integration.test.ts:128:		await serviceDb
+packages/lib/src/or/visibility-service.integration.test.ts:135:		await serviceDb.delete(organization).where(inArray(organization.id, ["or-vis-other"]));
+packages/lib/src/secrets/store.test.ts:10:	serviceDb: {
+packages/lib/src/secrets/store.ts:2:import { serviceDb as db } from "../db/db";
+```
+
+</details>
 
 ## Missing functionality (not built yet)
 

@@ -9,7 +9,7 @@ import {
 import { getDeploymentModeFromEnv } from "@workspace/config/env";
 import type { DeploymentMode } from "@workspace/config/types";
 import { eq, inArray } from "drizzle-orm";
-import { db } from "../db/db";
+import { db, serviceDb } from "../db/db";
 import type { DbConnection } from "../db/db-connection";
 import { brands, organizationSettings, subscription } from "../db/schema";
 
@@ -108,7 +108,10 @@ export async function getOrgBillingStates(
 	const now = options?.now ?? new Date();
 
 	const [subscriptionRows, settingsRows] = await Promise.all([
-		conn.select().from(subscription).where(inArray(subscription.referenceId, orgIds)),
+		// Online Reset: a client-role user may not read subscription rows (migration
+		// 0040), but their organization's plan still decides what they can use, so
+		// the plan is worked out on the system handle unless a caller passes one.
+		(options?.conn ?? serviceDb).select().from(subscription).where(inArray(subscription.referenceId, orgIds)),
 		conn.select().from(organizationSettings).where(inArray(organizationSettings.organizationId, orgIds)),
 	]);
 

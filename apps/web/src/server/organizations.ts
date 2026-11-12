@@ -3,16 +3,13 @@ import { isOrgAdminRole } from "@workspace/config/roles";
 import { getDeployment } from "@workspace/deployment";
 import { syncAuth0UserById } from "@workspace/deployment/auth-hooks/whitelabel";
 import { isValidSlug, MAX_SLUG_LENGTH } from "@workspace/lib/app-urls";
-import { db } from "@workspace/lib/db/db";
 import { provisionUmbrellaOrg } from "@workspace/lib/db/provisioning";
-import { organization } from "@workspace/lib/db/schema";
-import { claimOrgSlug, isOrgSlugAvailable } from "@workspace/lib/db/unique-names";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getAuthSession, listUserOrganizations, requireAuthSession, requireOrganization } from "@/lib/auth/helpers";
 import { summarizeOrganizations } from "@/lib/organizations/summarize";
 import type { OrganizationsView } from "@/lib/organizations/types";
-import { INVALID_SLUG, TAKEN_SLUG } from "@/lib/slug-errors";
+import { INVALID_SLUG } from "@/lib/slug-errors";
+import { renameOrganization } from "./signed-in-core";
 
 export type { OrganizationsView } from "@/lib/organizations/types";
 
@@ -66,19 +63,6 @@ export const updateOrganizationFn = createServerFn({ method: "POST" })
 		}
 		if (data.slug !== undefined && !isValidSlug(data.slug)) throw new Error(INVALID_SLUG);
 
-		const slug = await claimOrgSlug(
-			() =>
-				db.transaction(async (tx) => {
-					if (data.slug !== undefined && !(await isOrgSlugAvailable(data.slug, { excludeOrgId: org.id, conn: tx }))) {
-						throw new Error(TAKEN_SLUG);
-					}
-					await tx
-						.update(organization)
-						.set({ name: data.name, ...(data.slug !== undefined && { slug: data.slug }) })
-						.where(eq(organization.id, org.id));
-					return data.slug ?? org.slug;
-				}),
-			TAKEN_SLUG,
-		);
+		const slug = await renameOrganization(org, data);
 		return { slug };
 	});

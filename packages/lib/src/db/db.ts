@@ -30,7 +30,16 @@ export const tenantContext = new AsyncLocalStorage<{
 	organizationId: string;
 	organizationIds: string[];
 	brandIds?: string[];
+	/** Set when the transaction has ended. Work still running in its async context must not reuse the connection. */
+	closed: boolean;
 }>();
+
+export class TenantTransactionClosedError extends Error {
+	constructor() {
+		super("The tenant transaction for this request has ended; its database handle can no longer be used");
+		this.name = "TenantTransactionClosedError";
+	}
+}
 
 const baseDb = createDb(process.env.DATABASE_URL!);
 
@@ -40,6 +49,8 @@ export const serviceDb: Db = baseDb;
 export const db: Db = new Proxy(baseDb, {
 	get(target, property, receiver) {
 		const scope = tenantContext.getStore();
+		// The transaction's connection is back in the pool and may be serving another tenant.
+		if (scope?.closed) throw new TenantTransactionClosedError();
 		const source = (scope ? scope.tx : target) as object;
 		const value = Reflect.get(source, property, scope ? source : receiver);
 		return typeof value === "function" ? value.bind(source) : value;

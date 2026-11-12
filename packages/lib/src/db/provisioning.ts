@@ -1,6 +1,11 @@
 import { count, eq } from "drizzle-orm";
 import { slugify } from "../app-urls";
-import { db } from "./db";
+import { serviceDb } from "./db";
+
+// Online Reset: provisioning creates organizations and memberships, which no
+// tenant may do, so it always runs on the system handle.
+const db = serviceDb;
+
 import type { DbConnection } from "./db-connection";
 import { member, organization, user } from "./schema";
 import { claimOrgSlug, findUnusedOrgSlug, isOrgSlugAvailable } from "./unique-names";

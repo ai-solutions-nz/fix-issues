@@ -13,6 +13,7 @@ const listUserOrganizations = vi.hoisted(() => vi.fn());
 const selectUser = vi.hoisted(() =>
 	vi.fn<() => Promise<Array<{ id: string; email: string; name: string; banned?: boolean | null }>>>(),
 );
+const userTenantScope = vi.hoisted(() => vi.fn());
 const selectClient = vi.hoisted(() => vi.fn<() => Promise<Array<{ disabled?: boolean | null }>>>());
 
 vi.mock("@/lib/auth/api-auth", async (importOriginal) => ({
@@ -25,13 +26,14 @@ vi.mock("@workspace/lib/auth/server", async (importOriginal) => ({
 }));
 vi.mock("@/lib/auth/server", () => ({ auth: {} }));
 vi.mock("@/lib/auth/helpers", () => ({ listUserOrganizations }));
+vi.mock("@workspace/lib/or/tenant-scope", () => ({ userTenantScope }));
 // Both reads share a builder, so the mock tells them apart by table.
 vi.mock("@workspace/lib/db/db", async () => {
 	const { user } = await import("@workspace/lib/db/schema");
 	return {
-		// better-auth is built on serviceDb (Online Reset); this test never reaches it.
-		serviceDb: {},
-		db: {
+		// Online Reset: these reads run before any tenant scope, on the system handle.
+		db: {},
+		serviceDb: {
 			select: () => ({
 				from: (table: unknown) => ({
 					where: () => ({ limit: () => (table === user ? selectUser() : selectClient()) }),
@@ -67,6 +69,9 @@ const oauthSession: UserAuth = {
 	email: "someone@example.com",
 	name: "Someone",
 	organizationIds: ["org_1", "org_2"],
+	brandIds: null,
+	restrictedOrganizationIds: [],
+	adminOrganizationIds: ["org_1"],
 	clientId: "client_1",
 	expiresAt: null,
 };
@@ -158,7 +163,11 @@ describe("resolveMcpAuth", () => {
 		verifyMcpAccessToken.mockResolvedValue(TOKEN_CLAIMS);
 		selectUser.mockResolvedValue([{ id: "user_1", email: "someone@example.com", name: "Someone" }]);
 		selectClient.mockResolvedValue([{ disabled: false }]);
-		listUserOrganizations.mockResolvedValue([{ id: "org_1" }, { id: "org_2" }]);
+		userTenantScope.mockResolvedValue({
+			organizationIds: ["org_1", "org_2"],
+			adminOrganizationIds: ["org_1"],
+			userId: "user_1",
+		});
 
 		await expect(resolveMcpAuth(bearer("oauth-token"))).resolves.toEqual({
 			auth: { ...oauthSession, expiresAt: new Date(TOKEN_CLAIMS.exp * 1000) },
@@ -170,7 +179,7 @@ describe("resolveMcpAuth", () => {
 		verifyMcpAccessToken.mockResolvedValue(TOKEN_CLAIMS);
 		selectUser.mockResolvedValue([{ id: "user_1", email: "someone@example.com", name: "Someone" }]);
 		selectClient.mockResolvedValue([{ disabled: false }]);
-		listUserOrganizations.mockResolvedValue([]);
+		userTenantScope.mockResolvedValue({ organizationIds: [], adminOrganizationIds: [], userId: "user_1" });
 
 		const resolved = await resolveMcpAuth(bearer("oauth-token"));
 		expect(resolved).toMatchObject({ auth: { organizationIds: [] } });
@@ -183,6 +192,25 @@ describe("resolveMcpAuth", () => {
 		selectClient.mockResolvedValue([{ disabled: false }]);
 
 		await expect(resolveMcpAuth(bearer("oauth-token"))).resolves.toEqual(INVALID_KEY);
+	});
+
+	it("carries a client-role user's brand restriction into the principal", async () => {
+		resolveApiAuth.mockResolvedValue(INVALID_KEY);
+		verifyMcpAccessToken.mockResolvedValue(TOKEN_CLAIMS);
+		selectUser.mockResolvedValue([{ id: "user_1", email: "someone@example.com", name: "Someone" }]);
+		selectClient.mockResolvedValue([{ disabled: false }]);
+		userTenantScope.mockResolvedValue({
+			organizationIds: ["org_1"],
+			adminOrganizationIds: [],
+			brandIds: ["brand_granted"],
+			restrictedOrganizationIds: ["org_1"],
+			userId: "user_1",
+		});
+
+		await expect(resolveMcpAuth(bearer("oauth-token"))).resolves.toMatchObject({
+			auth: { organizationIds: ["org_1"], brandIds: ["brand_granted"], restrictedOrganizationIds: ["org_1"] },
+		});
+		expect(listUserOrganizations).not.toHaveBeenCalled();
 	});
 
 	it("refuses a banned person, whose signature is still perfectly good", async () => {

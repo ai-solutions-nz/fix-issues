@@ -36,6 +36,12 @@ export interface UserAuth {
 	email: string | null;
 	name: string | null;
 	organizationIds: string[];
+	/** Null reaches every brand in those organizations; set for a client-role user. */
+	brandIds: string[] | null;
+	/** Organizations where the user holds the client role. */
+	restrictedOrganizationIds: string[];
+	/** Organizations the user owns or administers. */
+	adminOrganizationIds: string[];
 	clientId: string;
 	expiresAt: Date | null;
 }
@@ -62,7 +68,7 @@ export function principalReach(auth: Principal): PrincipalReach {
 		case "organization":
 			return { organizationIds: [auth.organizationId], brandIds: auth.brandIds, scopes: auth.scopes };
 		case "user":
-			return { organizationIds: auth.organizationIds, brandIds: null, scopes: new Set(API_SCOPES) };
+			return { organizationIds: auth.organizationIds, brandIds: auth.brandIds, scopes: new Set(API_SCOPES) };
 	}
 }
 

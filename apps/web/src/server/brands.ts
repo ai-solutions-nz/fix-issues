@@ -13,7 +13,6 @@ import { type Brand, type BrandWithPrompts, brands, competitors, prompts } from 
 import {
 	claimBrandSlug,
 	claimNewBrandSlug,
-	findUnusedBrandId,
 	findUnusedBrandSlug,
 	isBrandSlugAvailable,
 } from "@workspace/lib/db/unique-names";
@@ -41,6 +40,7 @@ import { normalizeBrandUpdate } from "@/lib/brand-settings";
 import { validateWebsiteUrl } from "@/lib/brand-website";
 import type { TrackedTarget } from "@/lib/model-filter";
 import { INVALID_SLUG, TAKEN_SLUG } from "@/lib/slug-errors";
+import { insertBrandInOrganization } from "./signed-in-core";
 
 /**
  * Targets rather than model ids: a model can appear twice, since scraped and
@@ -263,25 +263,14 @@ export const createBrandInOrgFn = createServerFn({ method: "POST" })
 		const defaultDomains = getDefaultBrandDomains();
 		const enabledModels = await resolveCreateEnabledModels(orgId, data.enabledModels);
 
-		return claimNewBrandSlug(() =>
-			db.transaction(async (tx) => {
-				const brandId = await findUnusedBrandId(baseSlug, tx);
-				const slug = await findUnusedBrandSlug(orgId, baseSlug, tx);
-
-				await tx.insert(brands).values({
-					id: brandId,
-					organizationId: orgId,
-					name: trimmedName,
-					slug,
-					website: urlValidation.formattedUrl,
-					enabled: true,
-					...(enabledModels && { enabledModels }),
-					...(defaultDomains.length > 0 && { additionalDomains: defaultDomains }),
-				});
-
-				return { brandId, brandSlug: slug };
-			}),
-		);
+		return insertBrandInOrganization({
+			organizationId: orgId,
+			name: trimmedName,
+			baseSlug,
+			website: urlValidation.formattedUrl,
+			enabledModels,
+			additionalDomains: defaultDomains,
+		});
 	});
 
 export const updateBrandFn = createServerFn({ method: "POST" })

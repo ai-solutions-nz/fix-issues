@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuthSession, requireOrganization } from "@/lib/auth/helpers";
 import { auth } from "@/lib/auth/server";
+import { joinedOrganizationSlug } from "./signed-in-core";
 
 function requireTeamInvites(): void {
 	if (!getDeployment().features.teamInvites) {
@@ -144,18 +145,12 @@ export const acceptInvitationFn = createServerFn({ method: "POST" })
 	.validator(z.object({ invitationId: z.string() }))
 	.handler(async ({ data }): Promise<{ orgSlug: string }> => {
 		requireTeamInvites();
-		await requireAuthSession();
+		const session = await requireAuthSession();
 
 		const result = await auth.api.acceptInvitation({
 			body: { invitationId: data.invitationId },
 			headers: getRequestHeaders(),
 		});
 
-		const [org] = await db
-			.select({ slug: organization.slug })
-			.from(organization)
-			.where(eq(organization.id, result.invitation.organizationId))
-			.limit(1);
-		if (!org) throw new Error("The organization for this invitation no longer exists");
-		return { orgSlug: org.slug };
+		return { orgSlug: await joinedOrganizationSlug(session.user.id, result.invitation.organizationId) };
 	});

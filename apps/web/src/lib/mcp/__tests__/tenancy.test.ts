@@ -42,7 +42,7 @@ vi.mock("@workspace/lib/db/db", () => {
 			},
 		},
 	);
-	return { db: chain };
+	return { db: chain, serviceDb: chain };
 });
 
 vi.mock("@/lib/postgres-read", () => ({

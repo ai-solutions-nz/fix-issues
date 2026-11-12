@@ -7,6 +7,7 @@ import { db } from "@workspace/lib/db/db";
 import type { DbConnection } from "@workspace/lib/db/db-connection";
 import { ensureOrganization } from "@workspace/lib/db/provisioning";
 import { brands, competitors, prompts } from "@workspace/lib/db/schema";
+import { TENANT_ID_FORMAT } from "@workspace/lib/db/tenant";
 import { claimNewBrandSlug, findUnusedBrandSlug } from "@workspace/lib/db/unique-names";
 import {
 	assertCanAddPrompts,
@@ -48,8 +49,16 @@ const promptInputSchema = z.object({
 type CompetitorInput = z.infer<typeof competitorInputSchema>;
 type PromptInput = z.infer<typeof promptInputSchema>;
 
+/**
+ * Online Reset: organization and brand ids end up in comma-separated tenant
+ * settings, so they must be one plain token: letters, digits, `-` and `_`.
+ */
+const tenantIdSchema = z
+	.string()
+	.regex(TENANT_ID_FORMAT, "IDs may contain only letters, digits, hyphens and underscores (max 128)");
+
 export const createBrandInputSchema = z.object({
-	id: z.string().min(1),
+	id: tenantIdSchema,
 	name: z.string().min(1),
 	domains: z.array(z.string()).min(1),
 	aliases: z.array(z.string()).optional(),
@@ -57,7 +66,7 @@ export const createBrandInputSchema = z.object({
 	prompts: z.array(promptInputSchema).optional(),
 	/** Omitted, an admin key provisions a new organization — the only way to
 	 * create one over the API. */
-	organizationId: z.string().min(1).optional(),
+	organizationId: tenantIdSchema.optional(),
 });
 
 export const updateBrandBodySchema = z.object({
@@ -68,7 +77,7 @@ export const updateBrandBodySchema = z.object({
 });
 
 export const wizardOnboardingInputSchema = z.object({
-	brandId: z.string().min(1),
+	brandId: tenantIdSchema,
 	brandName: z.string().min(1).optional(),
 	website: z.string().min(1).optional(),
 	additionalDomains: z.array(z.string()).optional(),

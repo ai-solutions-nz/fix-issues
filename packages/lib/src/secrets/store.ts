@@ -1,5 +1,5 @@
 import { CREDENTIAL_ENV_NAMES } from "@workspace/config/env-registry";
-import { db } from "../db/db";
+import { serviceDb as db } from "../db/db";
 import { secrets } from "../db/schema";
 import {
 	decryptSecret,
