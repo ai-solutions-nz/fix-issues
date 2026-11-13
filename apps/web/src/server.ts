@@ -13,9 +13,14 @@ void startCredentialRefresh();
  * Online Reset (Packet 1c): refuse to serve unless the database login is safe
  * for tenant isolation (member of or_tenant, not a superuser, no BYPASSRLS).
  * `OR_DB_ROLE_CHECK=warn` downgrades this to a warning for local development
- * against a superuser database; it is ignored when NODE_ENV is "production".
+ * against a superuser database, and only when NODE_ENV is explicitly
+ * "development" or "test"; with NODE_ENV unset or anything else it exits.
+ * A database that is down at startup also fails the check: the server exits
+ * (fail-closed) and the host must restart it with back-off.
  */
-const warnOnly = process.env.OR_DB_ROLE_CHECK === "warn" && process.env.NODE_ENV !== "production";
+const warnOnly =
+	process.env.OR_DB_ROLE_CHECK === "warn" &&
+	(process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test");
 const databaseRoleReady = assertTenantRoleReady().then(
 	() => undefined,
 	(error: unknown) => {

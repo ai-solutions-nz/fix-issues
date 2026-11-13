@@ -20,7 +20,8 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    # online-reset-platform: so the or_app isolation suites run on GitHub.
+    branches: [main, online-reset-platform]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -115,6 +116,8 @@ jobs:
           pnpm -C packages/lib test:integration
         env:
           TEST_DATABASE_URL: postgres://or_app:or_app@localhost:5432/elmo_test
+          # Only for the role-check tests that create throwaway logins.
+          TEST_ADMIN_DATABASE_URL: postgres://postgres:postgres@localhost:5432/elmo_test
           # Off UTC on purpose: a timestamp that loses its zone between Postgres
           # and JS only reads wrong on a host that isn't in UTC.
           TZ: America/Los_Angeles

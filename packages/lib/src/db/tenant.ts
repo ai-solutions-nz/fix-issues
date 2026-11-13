@@ -24,13 +24,26 @@ type Tx = Parameters<Parameters<typeof serviceDb.transaction>[0]>[0];
 type PooledClient = { query: (...args: unknown[]) => unknown; release: (...args: unknown[]) => unknown };
 
 /**
- * Online Reset (Packet 1c): every query of a tenant transaction, whether made
- * through the shared `db` handle, the `tx` passed to the callback, or a query
- * built inside the scope and run later, goes through the transaction's pooled
- * connection. That connection is replaced by a guard which refuses queries
- * once drizzle releases it to the pool (after COMMIT or ROLLBACK), so nothing
- * can run on it after it may have started serving another tenant.
+ * Online Reset (Packets 1c, 1d): every query of a tenant transaction, whether
+ * made through the shared `db` handle, the `tx` passed to the callback, or a
+ * query built inside the scope and run later, goes through the transaction's
+ * pooled connection. That connection is replaced by a guard which closes the
+ * moment drizzle sends the transaction's COMMIT or ROLLBACK (savepoint
+ * statements are not ends) and refuses every query sent after that. pg queues
+ * queries in order, so a query sent before the end still runs inside the
+ * transaction, and one sent after it is refused instead of running after the
+ * COMMIT as the owner login with no tenant scope. Release also closes it.
  */
+const TRANSACTION_END = /^\s*(commit|rollback|end|abort)\s*(work|transaction)?\s*;?\s*$/i;
+
+function queryText(arg: unknown): string {
+	if (typeof arg === "string") return arg;
+	if (arg && typeof arg === "object" && typeof (arg as { text?: unknown }).text === "string") {
+		return (arg as { text: string }).text;
+	}
+	return "";
+}
+
 function guardTransactionConnection(tx: Tx, state: { closed: boolean }): void {
 	const session = (tx as unknown as { session?: { client?: PooledClient } }).session;
 	const client = session?.client;
@@ -40,8 +53,12 @@ function guardTransactionConnection(tx: Tx, state: { closed: boolean }): void {
 	session.client = new Proxy(client, {
 		get(target, property) {
 			if (property === "query") {
-				return (...args: unknown[]) =>
-					state.closed ? Promise.reject(new TenantTransactionClosedError()) : target.query(...args);
+				return (...args: unknown[]) => {
+					if (state.closed) return Promise.reject(new TenantTransactionClosedError());
+					// Close before sending, so nothing queued behind the end can run.
+					if (TRANSACTION_END.test(queryText(args[0]))) state.closed = true;
+					return target.query(...args);
+				};
 			}
 			if (property === "release") {
 				return (...args: unknown[]) => {

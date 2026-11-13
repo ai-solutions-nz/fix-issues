@@ -148,6 +148,65 @@ describe("the tenant handle closes with its transaction", () => {
 		expect(closedByGuard(error)).toBe(true);
 	});
 
+	// Packet 1d: Neo's race. An unawaited slow query keeps the connection busy, so
+	// drizzle's COMMIT (or ROLLBACK) waits in pg's queue behind it; a timer then
+	// fires a query while the end is in flight. Before the fix that query ran
+	// after the COMMIT as the owner login, with no tenant scope.
+	const probe = sql`select current_user::text as login,
+		coalesce(current_setting('or.org_ids', true), '') as orgs,
+		(select count(*)::int from brands where id in (${BRAND_A}, ${BRAND_B})) as brands`;
+
+	async function raceTheEnd(end: "commit" | "rollback") {
+		let racing: Promise<unknown> = Promise.resolve();
+		const run = withTenant({ organizationId: ORG_A }, async () => {
+			const slow = db.execute(sql`select pg_sleep(0.3)`);
+			slow.catch(() => {});
+			racing = delay(100).then(() => db.execute(probe));
+			racing.catch(() => {});
+			if (end === "rollback") throw new Error("simulated failure");
+		});
+		await run.catch(() => {});
+		return racing.then(
+			(result) => ({ rows: (result as { rows: unknown[] }).rows }),
+			(error: unknown) => ({ error }),
+		);
+	}
+
+	it("refuses a query racing the COMMIT", async () => {
+		const outcome = await raceTheEnd("commit");
+		expect("rows" in outcome ? outcome.rows : null, "a query ran after COMMIT").toBeNull();
+		expect(closedByGuard((outcome as { error: unknown }).error)).toBe(true);
+	});
+
+	it("refuses a query racing the ROLLBACK", async () => {
+		const outcome = await raceTheEnd("rollback");
+		expect("rows" in outcome ? outcome.rows : null, "a query ran after ROLLBACK").toBeNull();
+		expect(closedByGuard((outcome as { error: unknown }).error)).toBe(true);
+	});
+
+	it("keeps the transaction usable after a savepoint rolls back", async () => {
+		const result = await withTenant({ organizationId: ORG_A }, async (tx) => {
+			await tx
+				.transaction(async (sp) => {
+					await sp.update(brands).set({ name: "savepoint change" }).where(eq(brands.id, BRAND_A));
+					throw new Error("undo the savepoint");
+				})
+				.catch(() => {});
+			// The same through the shared handle, which nests as a savepoint too.
+			await db
+				.transaction(async (sp) => {
+					await sp.update(brands).set({ name: "savepoint change 2" }).where(eq(brands.id, BRAND_A));
+					throw new Error("undo again");
+				})
+				.catch(() => {});
+			const rows = await db.select({ id: brands.id, name: brands.name }).from(brands);
+			const [scope] = (await tx.execute(probe)).rows as Array<{ login: string; orgs: string }>;
+			return { rows, scope };
+		});
+		expect(result.rows).toEqual([{ id: BRAND_A, name: "Roles Brand A" }]);
+		expect(result.scope).toMatchObject({ login: "or_tenant", orgs: ORG_A });
+	});
+
 	it("refuses to open a nested scope from a closed one", async () => {
 		let nested: Promise<unknown> = Promise.resolve();
 		await withTenant({ organizationId: ORG_A }, async () => {

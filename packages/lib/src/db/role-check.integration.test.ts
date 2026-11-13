@@ -4,8 +4,9 @@
  * role grant is membership of or_tenant (see BUILD-STATUS.md), and there the
  * check must pass. Run as a superuser, it must fail and say why.
  */
-import { describe, expect, it } from "vitest";
-import { serviceDb } from "./db";
+import { sql } from "drizzle-orm";
+import { afterAll, describe, expect, it } from "vitest";
+import { createDb, serviceDb } from "./db";
 import {
 	assertTenantRoleReady,
 	inspectTenantRole,
@@ -32,6 +33,8 @@ describe("startup check of the database login", () => {
 			login: "or_app",
 			superuser: false,
 			bypassRls: false,
+			createRole: false,
+			otherRoles: [],
 			tenantRoleExists: true,
 			tenantRoleBypassRls: false,
 			canSetTenantRole: true,
@@ -44,5 +47,89 @@ describe("startup check of the database login", () => {
 		expect(tenantRoleProblems({ ...ok, bypassRls: true }).join()).toMatch(/NOBYPASSRLS/);
 		expect(tenantRoleProblems({ ...ok, tenantRoleBypassRls: true }).join()).toMatch(/or_tenant can bypass/);
 		expect(tenantRoleProblems({ ...ok, tenantRoleExists: false }).join()).toMatch(/does not exist/);
+		expect(tenantRoleProblems({ ...ok, createRole: true })).toEqual([
+			'login "or_app" has CREATEROLE: ALTER ROLE "or_app" NOCREATEROLE',
+		]);
+		expect(tenantRoleProblems({ ...ok, otherRoles: ["cloudsqlsuperuser", "rds_superuser"] }).join()).toMatch(
+			/member of "cloudsqlsuperuser", "rds_superuser"/,
+		);
+	});
+});
+
+/**
+ * Real logins, created through an administrator connection. CI and the local
+ * setup set TEST_ADMIN_DATABASE_URL (the postgres superuser on the same test
+ * database); without it these are skipped.
+ */
+const adminUrl = process.env.TEST_ADMIN_DATABASE_URL;
+const LOGIN = "or_check_login";
+const EXTRA = "or_check_rds_superuser";
+
+describe.skipIf(!adminUrl)("startup check against real logins", () => {
+	const admin = adminUrl ? createDb(adminUrl) : undefined;
+	const appUrl = () => {
+		const url = new URL(adminUrl as string);
+		url.username = LOGIN;
+		url.password = LOGIN;
+		return url.toString();
+	};
+	async function reset() {
+		await admin?.execute(sql.raw(`DROP ROLE IF EXISTS ${LOGIN}`));
+		await admin?.execute(sql.raw(`DROP ROLE IF EXISTS ${EXTRA}`));
+	}
+	async function inspectAs() {
+		const conn = createDb(appUrl());
+		try {
+			return await inspectTenantRole(conn);
+		} finally {
+			await conn.$client.end();
+		}
+	}
+	afterAll(async () => {
+		await reset();
+		await admin?.$client.end();
+	});
+
+	it("passes for a login whose only grant is or_tenant", async () => {
+		await reset();
+		await admin?.execute(
+			sql.raw(`CREATE ROLE ${LOGIN} LOGIN PASSWORD '${LOGIN}' NOSUPERUSER NOBYPASSRLS NOCREATEROLE`),
+		);
+		await admin?.execute(sql.raw(`GRANT or_tenant TO ${LOGIN}`));
+		const report = await inspectAs();
+		expect(tenantRoleProblems(report)).toEqual([]);
+	});
+
+	it("fails a login with CREATEROLE", async () => {
+		await reset();
+		await admin?.execute(sql.raw(`CREATE ROLE ${LOGIN} LOGIN PASSWORD '${LOGIN}' NOSUPERUSER NOBYPASSRLS CREATEROLE`));
+		await admin?.execute(sql.raw(`GRANT or_tenant TO ${LOGIN}`));
+		const report = await inspectAs();
+		expect(report.createRole).toBe(true);
+		expect(tenantRoleProblems(report).join()).toMatch(/CREATEROLE/);
+	});
+
+	it("fails a login that also belongs to a host admin role, directly or through another role", async () => {
+		await reset();
+		await admin?.execute(sql.raw(`CREATE ROLE ${EXTRA} NOLOGIN`));
+		await admin?.execute(
+			sql.raw(`CREATE ROLE ${LOGIN} LOGIN PASSWORD '${LOGIN}' NOSUPERUSER NOBYPASSRLS NOCREATEROLE`),
+		);
+		await admin?.execute(sql.raw(`GRANT or_tenant TO ${LOGIN}`));
+		await admin?.execute(sql.raw(`GRANT pg_read_all_stats TO ${LOGIN}`));
+		await admin?.execute(sql.raw(`GRANT ${EXTRA} TO ${LOGIN}`));
+		const direct = await inspectAs();
+		expect(direct.otherRoles).toEqual([EXTRA]);
+		expect(tenantRoleProblems(direct).join()).toMatch(new RegExp(`member of "${EXTRA}"`));
+
+		// Nested: the login reaches the admin role only through a middle role.
+		await admin?.execute(sql.raw(`REVOKE ${EXTRA} FROM ${LOGIN}`));
+		await admin?.execute(sql.raw(`DROP ROLE IF EXISTS or_check_middle`));
+		await admin?.execute(sql.raw(`CREATE ROLE or_check_middle NOLOGIN`));
+		await admin?.execute(sql.raw(`GRANT ${EXTRA} TO or_check_middle`));
+		await admin?.execute(sql.raw(`GRANT or_check_middle TO ${LOGIN}`));
+		const nested = await inspectAs();
+		expect(nested.otherRoles).toEqual(["or_check_middle", EXTRA]);
+		await admin?.execute(sql.raw(`DROP ROLE or_check_middle`));
 	});
 });
