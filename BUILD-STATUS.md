@@ -12,7 +12,7 @@ pnpm test                                    # 2,009 unit tests (8 packages)
 TEST_DATABASE_URL=postgres://or_app:or_app@localhost:5432/elmo_test \
   pnpm -C packages/lib test:integration      # 85 Postgres tests
 # same for apps/worker (34) and apps/web (174)
-pnpm lint                                    # Biome, 886 files, 0 errors
+pnpm lint                                    # Biome, 887 files, 0 errors
 DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Christchurch demo
 ```
 
@@ -114,7 +114,7 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
   - or-core 72, lib 830, web 748, config 153, cli 89, deployment 64, site-audit 38, worker 15.
 - **Integration (Postgres 16):** 293, run as the non-superuser `or_app` login (member of `or_tenant` only, owner of the test database).
   - lib 85, worker 34, web 174. Web includes the strict 90-test isolation suite and 19 signed-in tests.
-- **Lint:** Biome over 886 files, 0 errors.
+- **Lint:** Biome over 887 files, 0 errors.
 - **Type checks:** all packages, including the NodeNext worker.
 - **Production build:** `vite build` succeeded.
 - **Browser smoke test** (local dev server) covered:

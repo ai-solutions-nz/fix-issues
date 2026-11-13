@@ -41,7 +41,7 @@ const { findMcpClientSummary, insertBrandInOrganization, joinedOrganizationSlug,
 	"@/server/signed-in-core"
 );
 const { TAKEN_SLUG } = await import("@/lib/slug-errors");
-const { loadBillingState } = await import("@/server/billing-core");
+const { loadBillingState } = await import("@/server/billing-state");
 const billingRoute = await import("@/routes/api/v1/organizations/$organizationId/billing");
 
 const ORG_A = "si-org-a";

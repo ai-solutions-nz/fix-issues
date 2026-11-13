@@ -23,9 +23,9 @@ import {
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { listUserOrganizations, requireAuthSession, requireOrganization } from "@/lib/auth/helpers";
-import { type BillingState, liveSubscription, loadBillingState } from "./billing-core";
+import { type BillingState, liveSubscription, loadBillingState } from "./billing-state";
 
-export type { BillingState } from "./billing-core";
+export type { BillingState } from "./billing-state";
 
 export type PaywallRequired = {
 	needsPlan: true;
