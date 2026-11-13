@@ -31,13 +31,26 @@ describe("parseSitemap", () => {
 		expect(parseSitemap("<html><body>Not found</body></html>").kind).toBe("invalid");
 	});
 
+	// Online Reset: relative, not absolute. A fixed 2000 ms bound failed on a
+	// slower GitHub runner (2687 ms) with no regression. Timing N and 4N
+	// entries checks the same property on any machine: linear growth gives a
+	// ratio near 4, quadratic near 16. Best of three runs damps runner noise.
 	it("parses a crafted sitemap of unclosed entries in linear time", () => {
-		const xml = `<urlset>${"<url>".repeat(1_000_000)}`;
-		const started = performance.now();
+		const fastest = (entries: number) => {
+			const xml = `<urlset>${"<url>".repeat(entries)}`;
+			let best = Number.POSITIVE_INFINITY;
+			for (let run = 0; run < 3; run++) {
+				const started = performance.now();
+				parseSitemap(xml);
+				best = Math.min(best, performance.now() - started);
+			}
+			return best;
+		};
+		fastest(25_000); // warm up the JIT so the first size isn't penalised
+		const small = fastest(250_000);
+		const large = fastest(1_000_000);
 
-		parseSitemap(xml);
-
-		expect(performance.now() - started).toBeLessThan(2000);
+		expect(large / small, `250k: ${small.toFixed(1)} ms, 1M: ${large.toFixed(1)} ms`).toBeLessThan(8);
 	});
 });
 
