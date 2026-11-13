@@ -6,13 +6,13 @@ _Last updated: 2026-11-12. Current milestone: **5 (reporting and platform QA)**.
 
 ```bash
 pnpm install
-pnpm test                                    # 2,027 unit tests (8 packages)
+pnpm test                                    # 2,035 unit tests (8 packages)
 # Integration tests run as a non-superuser login (see "Database login for tenant isolation");
 # TEST_ADMIN_DATABASE_URL=postgres://postgres:postgres@localhost:5432/elmo_test also runs the role-check tests that create logins
 TEST_DATABASE_URL=postgres://or_app:or_app@localhost:5432/elmo_test \
   pnpm -C packages/lib test:integration      # 87 Postgres tests
 # same for apps/worker (34) and apps/web (174)
-pnpm lint                                    # Biome, 895 files, 0 errors
+pnpm lint                                    # Biome, 897 files, 0 errors
 DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Christchurch demo
 ```
 
@@ -110,11 +110,11 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 
 ## Tests performed (latest run, all passing)
 
-- **Unit:** 2,027 (plus 187 Storybook tests).
-  - or-core 72, lib 830, web 759, config 158, cli 89, deployment 66, site-audit 38, worker 15.
+- **Unit:** 2,035 (plus 192 Storybook tests).
+  - or-core 72, lib 830, web 767, config 158, cli 89, deployment 66, site-audit 38, worker 15.
 - **Integration (Postgres 16):** 295, run as the non-superuser `or_app` login (member of `or_tenant` only, owner of the test database).
   - lib 87, worker 34, web 174. Web includes the strict 90-test isolation suite and 19 signed-in tests.
-- **Lint:** Biome over 895 files, 0 errors.
+- **Lint:** Biome over 897 files, 0 errors.
 - **Type checks:** all packages, including the NodeNext worker.
 - **Production build:** `vite build` succeeded.
 - **Browser smoke test** (local dev server) covered:
@@ -174,6 +174,12 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
   - **CSP:** `var.elmohq.com` and every `*.crisp.chat` / Crisp websocket host are removed. PostHog is allowed only at the configured host's origin (`apps/web/src/lib/csp.ts`). A support chat added later needs its hosts added to the policy.
   - **Ad tags:** upstream's Google Ads id, Meta Pixel id, conversion labels and production hosts are removed (`packages/ui/src/lib/ad-tags.ts`), so no ad tag loads anywhere.
   - **Tests:** positive tests run against a mocked `brand-links`, covering link paths, legal-menu modes, demo chat links and the promotion flag. They sit beside the empty-state tests. There are also new tests for the consent rule and the CSP source.
+- **Consent and CSP follow-ups (Packet 2c, Neo's review of `2bd5727`).**
+  - **Banner text:** the cookie banner names the deployment's own brand (whitelabel shows its operator's name, not "Online Reset"). It mentions advertising cookies, and offers the Advertising switch, only when an ad id is set. "Accept" grants only what was offered, so a later ad tag can't ride on an earlier answer.
+  - **CSP:** the policy names a third party only when it is configured. Google's hosts appear only with a Google Ads id, Meta's only with a Meta Pixel id, and Clarity's only with Clarity enabled. With nothing configured, `script-src` is `'self' 'unsafe-inline' https://challenges.cloudflare.com`, with no googletagmanager.com or google.com (a known CSP bypass). The builder is in `apps/web/src/lib/csp.ts`.
+  - **PostHog host:** the CSP source must be an `https:` URL; anything else is dropped.
+  - **DISABLE_TELEMETRY** now switches Clarity off too, as it already did PostHog (`apps/web/src/server/clarity.ts`).
+  - **Stories:** `cookie-consent.stories.tsx` covers the banner without a policy link (F1), the whitelabel footer with and without analytics (F2), and the hosted footer.
 - **"Publish" uses the brand's first CMS connection.** There is no UI to add or manage CMS connections, edit the brand profile, invite client users or grant them brands. These are currently set up through the service functions or the demo script.
 - **The demo's mock WordPress stops when the demo exits.** Publishing from the UI afterwards fails, and the failure is recorded as `failed`, until a real or mock CMS is connected.
 - **Embeddings are lexical, not semantic.** Question clustering uses a free, deterministic hash embedding stored as `real[]`; pgvector and model embeddings are not wired. As a result, paraphrases that share no words are not merged.
@@ -261,7 +267,13 @@ Must be complete before any real client data or public launch:
 - [ ] **Production database login** set up as in "Database login for tenant isolation", and the startup check passing.
 - [ ] **Our own icon artwork.** The favicon and app icons (`apps/web/public/icons/elmo-icon*`) are still upstream's "e" mark. Replace the artwork; the file names can stay.
 - [ ] **Published Terms of Service, Privacy Policy and Cookie Policy.** Publish them, then set `PUBLIC_LEGAL_URL` in `brand-links.ts`. Until then there are no legal links, the cloud sign-up consent notice is hidden, and the banner has no policy link.
-- [ ] **No analytics until the host is ours.** Leave `VITE_POSTHOG_KEY`/`VITE_POSTHOG_HOST` and `VITE_CLARITY_PROJECT_ID` unset in production until we run (or contract) the analytics host and the Cookie Policy describes it.
+- [ ] **No analytics until the host is ours.** Leave these unset in production until we run (or contract) the host and the Cookie Policy describes it:
+  - `VITE_POSTHOG_KEY` / `VITE_POSTHOG_HOST` and `VITE_CLARITY_PROJECT_ID`;
+  - Plausible (`VITE_PLAUSIBLE_DOMAIN`), which loads in `__root.tsx` with no consent check;
+  - Sentry (`SENTRY_DSN`, `VITE_SENTRY_DSN`), which starts in `instrument.server.mjs` and `router.tsx` with no consent check.
+
+  Plausible and Sentry need either a consent gate or a documented legitimate-interest basis before they are switched on.
+- [ ] **Decide opt-in or opt-out consent for cloud and demo outside the EEA, UK and Switzerland** before any analytics is switched on. Today those regions get analytics by default until the visitor declines (`resolveConsent` with `consentRequired` false); local and whitelabel always wait for an accept.
 - [ ] **Decide on the `elmo_` API key prefix.** Issued keys carry it, and the API docs name it. Either keep it as a documented legacy prefix, or add a new prefix while still accepting `elmo_` for existing keys.
 - [ ] **CLI and deploy path pull upstream releases.** The CLI's Compose file uses the `elmohq/elmo-*` Docker images, and `elmo upgrade`/the version check read `@elmohq/cli` from npm. A deployment would run upstream's builds, not ours. Publish our own images and CLI (or build from source), then repoint `apps/cli/src/compose.ts`, `compose-pin.ts` and `version.ts`.
 - [ ] **CLI telemetry and newsletter prompts.** `elmo init` still asks "Share telemetry?" and for a newsletter email, and its note describes PostHog collection. Both calls are no-ops. Remove the prompts, or make them truthful, before shipping the CLI.

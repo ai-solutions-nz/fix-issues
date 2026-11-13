@@ -9,7 +9,7 @@ import type { MissingEnvVar } from "@workspace/config/env";
 import { legalUrl } from "@workspace/config/legal";
 import type { DeploymentMode } from "@workspace/config/types";
 import { CookieConsentBanner } from "@workspace/ui/consent/cookie-consent-banner";
-import { initAdTags, trackAdPageView } from "@workspace/ui/lib/ad-tags";
+import { AD_TAGS_CONFIGURED, initAdTags, trackAdPageView } from "@workspace/ui/lib/ad-tags";
 import { isConsentRequired } from "@workspace/ui/lib/cookie-consent";
 import { useEffect, useState } from "react";
 import { usesWordmarkFont } from "@/components/logo";
@@ -206,7 +206,12 @@ function RootComponent() {
 			<body className="font-sans antialiased">
 				<Outlet />
 				{asksForConsent && consentRequired !== null && (
-					<CookieConsentBanner consentRequired={consentRequired} policyHref={legalUrl("cookies")} />
+					<CookieConsentBanner
+						consentRequired={consentRequired}
+						policyHref={legalUrl("cookies")}
+						appName={clientConfig?.branding?.name || DEFAULT_APP_NAME}
+						mentionsAdvertising={AD_TAGS_CONFIGURED}
+					/>
 				)}
 				<TanStackDevtools plugins={[queryDevtools]} />
 				<Scripts />

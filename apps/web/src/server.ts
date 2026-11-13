@@ -4,7 +4,8 @@ import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
 import { assertTenantRoleReady } from "@workspace/lib/db/role-check";
 import { startCredentialRefresh } from "@workspace/lib/secrets";
 import { AD_TAG_CSP } from "@workspace/ui/lib/ad-tags";
-import { posthogCspSource } from "@/lib/csp";
+import { buildContentSecurityPolicy } from "@/lib/csp";
+import { resolveClarityProjectId } from "@/server/clarity";
 
 // Not awaited: the app has to serve sign-in and settings whether or not the
 // credential store is reachable.
@@ -39,29 +40,16 @@ const strictTransportSecurity =
 	process.env.DEPLOYMENT_MODE === "whitelabel" ? "max-age=63072000" : "max-age=63072000; includeSubDomains";
 
 /**
- * Online Reset: the upstream PostHog proxy (var.elmohq.com) and the Crisp chat
- * hosts are gone from the policy. PostHog is allowed only at the host the
- * operator configured (VITE_POSTHOG_HOST); adding a support chat later needs
- * its hosts added here.
+ * Online Reset: the policy names only configured third parties (lib/csp.ts).
+ * The upstream PostHog proxy and the Crisp hosts are gone; a support chat
+ * added later needs its hosts added there.
  */
-const POSTHOG_SOURCE = posthogCspSource(process.env.VITE_POSTHOG_HOST);
-
 const SECURITY_HEADERS: Record<string, string> = {
-	"Content-Security-Policy": [
-		"default-src 'self'",
-		`script-src 'self' 'unsafe-inline' https://*.clarity.ms ${POSTHOG_SOURCE} https://challenges.cloudflare.com ${AD_TAG_CSP.script}`,
-		`style-src 'self' 'unsafe-inline' ${AD_TAG_CSP.style}`,
-		"img-src 'self' data: https: https://c.bing.com",
-		`font-src 'self' data: ${AD_TAG_CSP.font}`,
-		"media-src 'self'",
-		"worker-src 'self' blob:",
-		`frame-src 'self' https://challenges.cloudflare.com ${AD_TAG_CSP.frame}`,
-		`connect-src 'self' ${POSTHOG_SOURCE} https://*.sentry.io https://*.clarity.ms https://c.bing.com ${AD_TAG_CSP.connect}`,
-		"object-src 'none'",
-		"frame-ancestors 'none'",
-		"base-uri 'self'",
-		"form-action 'self'",
-	].join("; "),
+	"Content-Security-Policy": buildContentSecurityPolicy({
+		posthogHost: process.env.DISABLE_TELEMETRY ? undefined : process.env.VITE_POSTHOG_HOST,
+		clarity: Boolean(resolveClarityProjectId()),
+		adTags: AD_TAG_CSP,
+	}),
 	"Strict-Transport-Security": strictTransportSecurity,
 	"X-Frame-Options": "DENY",
 	"X-Content-Type-Options": "nosniff",

@@ -13,20 +13,57 @@ const PRODUCTION_HOSTS = new Set<string>();
 
 export type AdConversion = "sign_up" | "purchase" | "demo_booked";
 
+/** Whether any ad tag can load at all: false until our own ids are set above. */
+export const AD_TAGS_CONFIGURED = Boolean(GOOGLE_ADS_ID || META_PIXEL_ID);
+
+export type CspSources = { script: string; connect: string; frame: string; style: string; font: string };
+
 /**
- * Content-Security-Policy sources the two tags need, per directive. Images are covered by `https:`.
+ * Content-Security-Policy sources each tag needs, per directive. Images are covered by `https:`.
  * The Google Analytics hosts go unused, but Tag Assistant flags a policy without them.
  */
-export const AD_TAG_CSP = {
+const GOOGLE_CSP: CspSources = {
 	script:
-		"https://*.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://connect.facebook.net",
+		"https://*.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com",
 	connect:
-		"https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://pagead2.googlesyndication.com https://www.facebook.com https://connect.facebook.net https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
+		"https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://pagead2.googlesyndication.com https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
 	frame: "https://td.doubleclick.net https://bid.g.doubleclick.net https://www.googletagmanager.com",
 	// Only Tag Assistant's debug badge loads styles and fonts.
 	style: "https://www.googletagmanager.com https://fonts.googleapis.com",
 	font: "https://fonts.gstatic.com",
 };
+const META_CSP: CspSources = {
+	script: "https://connect.facebook.net",
+	connect: "https://www.facebook.com https://connect.facebook.net",
+	frame: "",
+	style: "",
+	font: "",
+};
+
+/**
+ * Online Reset (Packet 2c): each network's hosts are allowed only when its id
+ * is set. Allowing googletagmanager.com and google.com in script-src with no
+ * tag to load is a known CSP bypass, so with no ids the policy names neither.
+ */
+export function adTagCspFor(networks: { google: boolean; meta: boolean }): CspSources {
+	const parts = [networks.google ? GOOGLE_CSP : null, networks.meta ? META_CSP : null].filter(
+		(part): part is CspSources => part !== null,
+	);
+	const join = (key: keyof CspSources) =>
+		parts
+			.map((part) => part[key])
+			.filter(Boolean)
+			.join(" ");
+	return {
+		script: join("script"),
+		connect: join("connect"),
+		frame: join("frame"),
+		style: join("style"),
+		font: join("font"),
+	};
+}
+
+export const AD_TAG_CSP = adTagCspFor({ google: Boolean(GOOGLE_ADS_ID), meta: Boolean(META_PIXEL_ID) });
 
 const GOOGLE_ADS_CONVERSION_LABELS: Record<AdConversion, string> = {
 	sign_up: "",

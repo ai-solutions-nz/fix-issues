@@ -1,6 +1,7 @@
 /**
  * Server functions for providing deployment configuration to the client.
  */
+
 import { createServerFn } from "@tanstack/react-start";
 import { CRISP_WEBSITE_ID } from "@workspace/config/constants";
 import { getDeploymentModeFromEnv, getEnvValidationState } from "@workspace/config/env";
@@ -9,6 +10,7 @@ import { getDeployment } from "@workspace/deployment";
 import { getDefaultDelayHours } from "@workspace/lib/constants";
 import { countUsers } from "@workspace/lib/db/provisioning";
 import { storedCredentialsLoaded, withStoredCredentials } from "@workspace/lib/secrets";
+import { resolveClarityProjectId } from "./clarity";
 
 export type PublicClientConfig = Omit<ClientConfig, "branding"> & {
 	branding: Omit<ClientConfig["branding"], "onboardingRedirectUrl">;
@@ -60,7 +62,7 @@ export const getClientConfig = createServerFn({ method: "GET" }).handler(async (
 		branding: serializableBranding,
 		analytics: {
 			plausibleDomain: process.env.VITE_PLAUSIBLE_DOMAIN,
-			clarityProjectId: process.env.VITE_CLARITY_PROJECT_ID,
+			clarityProjectId: resolveClarityProjectId(),
 			posthogKey: resolvePosthogKey(),
 			posthogHost: resolvePosthogHost(),
 			crispWebsiteId: resolveCrispWebsiteId(),

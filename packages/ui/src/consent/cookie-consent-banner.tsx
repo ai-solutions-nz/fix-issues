@@ -37,7 +37,20 @@ const buttonBase =
  * isn't required the banner stays hidden until something dispatches
  * CONSENT_OPEN_EVENT, which is what a "Cookie preferences" link does.
  */
-export function CookieConsentBanner({ consentRequired, policyHref }: { consentRequired: boolean; policyHref: string }) {
+export function CookieConsentBanner({
+	consentRequired,
+	policyHref,
+	appName,
+	mentionsAdvertising,
+}: {
+	consentRequired: boolean;
+	policyHref: string;
+	/** The deployment's own brand name (whitelabel shows its operator's). */
+	appName: string;
+	/** Only when ad tags can actually load; otherwise advertising is neither mentioned nor offered. */
+	mentionsAdvertising: boolean;
+}) {
+	const categories = mentionsAdvertising ? CATEGORIES : CATEGORIES.filter((category) => category.key !== "marketing");
 	const [open, setOpen] = useState(false);
 	const [choice, setChoice] = useState<CookieConsent>(REJECT_ALL);
 	const [expanded, setExpanded] = useState(false);
@@ -72,8 +85,8 @@ export function CookieConsentBanner({ consentRequired, policyHref }: { consentRe
 		>
 			<div className="rounded-lg border bg-popover p-4 text-popover-foreground shadow-lg">
 				<p className="text-[13px] leading-relaxed">
-					We'd like to set analytics and advertising cookies to see how people find Online Reset. Essential cookies are
-					always on.
+					We'd like to set {mentionsAdvertising ? "analytics and advertising" : "analytics"} cookies to see how people
+					find {appName}. Essential cookies are always on.
 					{/* Online Reset: no link until a Cookie Policy is published (brand-links.ts). */}
 					{policyHref && (
 						<>
@@ -87,7 +100,7 @@ export function CookieConsentBanner({ consentRequired, policyHref }: { consentRe
 
 				{expanded && (
 					<ul className="mt-3 space-y-2.5 border-t pt-3">
-						{CATEGORIES.map((category) => (
+						{categories.map((category) => (
 							<li key={category.key} className="flex items-start gap-3">
 								<Switch
 									id={`consent-${category.key}`}
@@ -107,7 +120,8 @@ export function CookieConsentBanner({ consentRequired, policyHref }: { consentRe
 				<div className="mt-3.5 flex items-center gap-2">
 					<button
 						type="button"
-						onClick={() => commit(ACCEPT_ALL)}
+						// Accept grants only what was offered, so a later ad tag can't ride on it.
+						onClick={() => commit(mentionsAdvertising ? ACCEPT_ALL : { ...ACCEPT_ALL, marketing: false })}
 						className={`${buttonBase} bg-primary text-primary-foreground hover:bg-primary/90`}
 					>
 						Accept
