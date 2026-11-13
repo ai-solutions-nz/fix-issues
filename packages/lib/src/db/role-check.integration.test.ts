@@ -10,6 +10,7 @@ import { createDb, serviceDb } from "./db";
 import {
 	assertTenantRoleReady,
 	inspectTenantRole,
+	SERVER_ACCESS_ROLES,
 	TenantRoleMisconfiguredError,
 	tenantRoleProblems,
 } from "./role-check";
@@ -107,6 +108,45 @@ describe.skipIf(!adminUrl)("startup check against real logins", () => {
 		const report = await inspectAs();
 		expect(report.createRole).toBe(true);
 		expect(tenantRoleProblems(report).join()).toMatch(/CREATEROLE/);
+	});
+
+	// Packet 1e (Neo, N1): an underscore is a LIKE wildcard, so the old filter
+	// passed any role starting "pg" plus one character. Neo's pgsuper_x was a
+	// superuser role the login could SET ROLE to, and it read every tenant.
+	it("fails a login holding a superuser role whose name merely starts with pg", async () => {
+		await reset();
+		await admin?.execute(sql.raw("DROP ROLE IF EXISTS pgsuper_x"));
+		await admin?.execute(sql.raw("CREATE ROLE pgsuper_x NOLOGIN SUPERUSER"));
+		await admin?.execute(
+			sql.raw(`CREATE ROLE ${LOGIN} LOGIN PASSWORD '${LOGIN}' NOSUPERUSER NOBYPASSRLS NOCREATEROLE`),
+		);
+		await admin?.execute(sql.raw(`GRANT or_tenant TO ${LOGIN}`));
+		await admin?.execute(sql.raw(`GRANT pgsuper_x TO ${LOGIN}`));
+		try {
+			const report = await inspectAs();
+			expect(report.otherRoles).toEqual(["pgsuper_x"]);
+			expect(tenantRoleProblems(report).join()).toMatch(/member of "pgsuper_x"/);
+		} finally {
+			await admin?.execute(sql.raw(`REVOKE pgsuper_x FROM ${LOGIN}`));
+			await admin?.execute(sql.raw("DROP ROLE pgsuper_x"));
+		}
+	});
+
+	it("fails a login holding the built-in server file or program roles, but allows other pg_* roles", async () => {
+		await reset();
+		await admin?.execute(
+			sql.raw(`CREATE ROLE ${LOGIN} LOGIN PASSWORD '${LOGIN}' NOSUPERUSER NOBYPASSRLS NOCREATEROLE`),
+		);
+		await admin?.execute(sql.raw(`GRANT or_tenant TO ${LOGIN}`));
+		await admin?.execute(sql.raw(`GRANT pg_read_all_stats TO ${LOGIN}`));
+		expect(tenantRoleProblems(await inspectAs())).toEqual([]);
+		for (const role of SERVER_ACCESS_ROLES) {
+			await admin?.execute(sql.raw(`GRANT ${role} TO ${LOGIN}`));
+			const report = await inspectAs();
+			expect(report.otherRoles, role).toEqual([role]);
+			expect(tenantRoleProblems(report).join()).toMatch(new RegExp(`member of "${role}"`));
+			await admin?.execute(sql.raw(`REVOKE ${role} FROM ${LOGIN}`));
+		}
 	});
 
 	it("fails a login that also belongs to a host admin role, directly or through another role", async () => {

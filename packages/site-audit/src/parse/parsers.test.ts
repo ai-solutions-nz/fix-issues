@@ -51,7 +51,9 @@ describe("parseSitemap", () => {
 		const large = fastest(1_000_000);
 
 		expect(large / small, `250k: ${small.toFixed(1)} ms, 1M: ${large.toFixed(1)} ms`).toBeLessThan(8);
-	});
+		// Seven timed parses took 4.2 s on a GitHub runner; the default 5 s would
+		// fail on time before the ratio is checked.
+	}, 30_000);
 });
 
 describe("markdownLinks", () => {

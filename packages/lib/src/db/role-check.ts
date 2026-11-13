@@ -8,8 +8,9 @@
  *   mistake that skips `withTenant` cannot read across tenants silently through
  *   a privileged connection;
  * - `or_tenant` itself must not have BYPASSRLS or be a superuser;
- * - (Packet 1d) the login must not have CREATEROLE, and must not be a member
- *   of any role other than or_tenant and the built-in pg_* roles. Managed
+ * - (Packets 1d, 1e) the login must not have CREATEROLE, and must not be a
+ *   member of any role other than or_tenant and the built-in pg_* roles, nor
+ *   of the built-in server file and program roles. Managed
  *   hosts grant their own admin roles (rds_superuser, cloudsqlsuperuser,
  *   azure_pg_admin) that bypass these checks in other ways.
  * The login should own the tables (it runs the migrations): an owner is exempt
@@ -19,12 +20,23 @@
 import { sql } from "drizzle-orm";
 import { type Db, serviceDb } from "./db";
 
+/**
+ * Built-in roles that reach the server's files or shell. They are not tenant
+ * isolation bypasses as such, but they let the app login escalate, so they
+ * count as forbidden memberships like any non-built-in role.
+ */
+export const SERVER_ACCESS_ROLES = ["pg_execute_server_program", "pg_read_server_files", "pg_write_server_files"];
+
 export interface TenantRoleReport {
 	login: string;
 	superuser: boolean;
 	bypassRls: boolean;
 	createRole: boolean;
-	/** Roles the login belongs to, directly or through other roles, other than or_tenant and pg_*. */
+	/**
+	 * Roles the login belongs to, directly or through other roles, other than
+	 * or_tenant and built-in pg_* roles; the built-in server file and program
+	 * roles (SERVER_ACCESS_ROLES) are listed too.
+	 */
 	otherRoles: string[];
 	tenantRoleExists: boolean;
 	tenantRoleBypassRls: boolean;
@@ -69,7 +81,11 @@ export async function inspectTenantRole(conn: Db = serviceDb): Promise<TenantRol
 			select m.roleid from pg_auth_members m join granted g on m.member = g.oid
 		)
 		select r.rolname::text as name from granted g join pg_roles r on r.oid = g.oid
-		where r.rolname <> 'or_tenant' and r.rolname not like 'pg\_%'
+		where r.rolname <> 'or_tenant'
+			and (not starts_with(r.rolname, 'pg_') or r.rolname in (${sql.join(
+				SERVER_ACCESS_ROLES.map((role) => sql`${role}`),
+				sql`, `,
+			)}))
 		order by r.rolname`);
 	const otherRoles = (memberships.rows as Array<{ name: string }>).map((m) => m.name);
 	let canSetTenantRole = false;
@@ -112,7 +128,7 @@ export function tenantRoleProblems(report: TenantRoleReport): string[] {
 	if (report.otherRoles.length > 0) {
 		problems.push(
 			`login "${report.login}" is a member of ${report.otherRoles.map((r) => `"${r}"`).join(", ")}: ` +
-				"the app login may belong only to or_tenant (and built-in pg_* roles); REVOKE the others",
+				"the app login may belong only to or_tenant and built-in pg_* roles other than the server file and program roles; REVOKE the others",
 		);
 	}
 	if (report.tenantRoleBypassRls)
