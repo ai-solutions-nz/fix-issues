@@ -4,8 +4,11 @@
  * Production-quality printable report (US Letter 8.5 x 11 in).
  * Uses Share of Voice as the primary metric with rich competitive analysis.
  */
+
 import { createFileRoute, notFound, useRouteContext } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { PUBLIC_SITE_URL } from "@workspace/config/brand-links";
+import { DEFAULT_APP_NAME } from "@workspace/config/constants";
 import type { ClientConfig } from "@workspace/config/types";
 import {
 	analyzeByEngine,
@@ -883,7 +886,7 @@ function CallToActionPage({ branding }: { branding?: ClientConfig["branding"] })
 				<div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-10 text-center">
 					<h2 className="text-2xl font-bold text-slate-800 mb-2">Ready to Optimize Your AI Visibility?</h2>
 					<p className="text-slate-600 text-base mb-8">
-						Take your brand's AI presence to the next level with {branding?.name || "Elmo"}
+						Take your brand's AI presence to the next level with {branding?.name || DEFAULT_APP_NAME}
 					</p>
 
 					<div className="grid grid-cols-3 gap-6 mb-8">
@@ -917,11 +920,15 @@ function CallToActionPage({ branding }: { branding?: ClientConfig["branding"] })
 					</div>
 
 					<div className="pt-6 border-t border-blue-200">
-						<p className="text-slate-800 font-medium mb-2">Get started with {branding?.name || "Elmo"} today</p>
-						<p className="text-slate-600 text-sm text-balance">
-							Visit <strong>{branding?.url || "elmo.chat"}</strong> to learn more about our AI visibility platform and
-							services.
+						<p className="text-slate-800 font-medium mb-2">
+							Get started with {branding?.name || DEFAULT_APP_NAME} today
 						</p>
+						{reportSiteUrl(branding) && (
+							<p className="text-slate-600 text-sm text-balance">
+								Visit <strong>{reportSiteUrl(branding)}</strong> to learn more about our AI visibility platform and
+								services.
+							</p>
+						)}
 					</div>
 				</div>
 			</div>
@@ -1049,11 +1056,16 @@ function Finding({ children }: { children: React.ReactNode }) {
 	);
 }
 
+/** Online Reset: the deployment's own URL, else our public site once it exists (brand-links.ts), else nothing. */
+function reportSiteUrl(branding?: ClientConfig["branding"]): string {
+	return branding?.url || (PUBLIC_SITE_URL ? new URL(PUBLIC_SITE_URL).host : "");
+}
+
 function PageFooter({ branding }: { branding?: ClientConfig["branding"] }) {
 	return (
 		<div className="pt-4 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400">
 			<Logo iconClassName="!size-3" textClassName="text-[10px] font-medium text-slate-400" />
-			<span>{branding?.url || "elmo.chat"}</span>
+			<span>{reportSiteUrl(branding)}</span>
 		</div>
 	);
 }

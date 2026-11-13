@@ -4,10 +4,12 @@ import { resolveCrispWebsiteId } from "../config";
 afterEach(() => vi.unstubAllEnvs());
 
 describe("resolveCrispWebsiteId", () => {
-	it.each(["cloud", "demo"])("returns a website ID in %s mode", (mode) => {
+	// Online Reset: no support chat id is configured (brand-links.ts), so even the
+	// modes that would show the chat get none; the upstream id is gone.
+	it.each(["cloud", "demo"])("returns nothing in %s mode while no chat id is configured", (mode) => {
 		vi.stubEnv("DEPLOYMENT_MODE", mode);
 
-		expect(resolveCrispWebsiteId()).toBeTruthy();
+		expect(resolveCrispWebsiteId()).toBeUndefined();
 	});
 
 	it.each(["local", "whitelabel"])("returns nothing in %s mode", (mode) => {

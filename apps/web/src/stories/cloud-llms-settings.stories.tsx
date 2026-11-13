@@ -1,5 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { PROVIDERS_DOCS_URL } from "@workspace/config/constants";
+
+/** As describeProvider: no link until public docs exist (brand-links.ts). */
+const docsAt = (anchor: string) => (PROVIDERS_DOCS_URL ? `${PROVIDERS_DOCS_URL}#${anchor}` : "");
+
 import { PLATFORM_TIER_LABELS, STANDARD_PLATFORM_MENU } from "@workspace/config/plans";
 import { parseScrapeTargets } from "@workspace/config/scrape-targets";
 import { TooltipProvider } from "@workspace/ui/components/tooltip";
@@ -444,14 +448,14 @@ export const SelfHostedSuggestsMorePlatforms: Story = {
 									id: "brightdata",
 									name: "BrightData",
 									access: "scraped",
-									docsUrl: `${PROVIDERS_DOCS_URL}#brightdata`,
+									docsUrl: docsAt("brightdata"),
 								},
-								{ id: "oxylabs", name: "Oxylabs", access: "scraped", docsUrl: `${PROVIDERS_DOCS_URL}#oxylabs` },
+								{ id: "oxylabs", name: "Oxylabs", access: "scraped", docsUrl: docsAt("oxylabs") },
 								{
 									id: "openrouter",
 									name: "OpenRouter",
 									access: "api",
-									docsUrl: `${PROVIDERS_DOCS_URL}#direct-model-apis`,
+									docsUrl: docsAt("direct-model-apis"),
 								},
 							],
 						},
@@ -462,7 +466,7 @@ export const SelfHostedSuggestsMorePlatforms: Story = {
 									id: "anthropic-api",
 									name: "Anthropic",
 									access: "api",
-									docsUrl: `${PROVIDERS_DOCS_URL}#direct-model-apis`,
+									docsUrl: docsAt("direct-model-apis"),
 								},
 							],
 						},
@@ -473,7 +477,7 @@ export const SelfHostedSuggestsMorePlatforms: Story = {
 									id: "brightdata",
 									name: "BrightData",
 									access: "scraped",
-									docsUrl: `${PROVIDERS_DOCS_URL}#brightdata`,
+									docsUrl: docsAt("brightdata"),
 								},
 							],
 						},
@@ -492,16 +496,12 @@ export const SelfHostedSuggestsMorePlatforms: Story = {
 		// Claude has no scraper and Copilot has no API, so each shows a gap.
 		await expect((await canvas.findAllByText("—")).length).toBe(2);
 
-		// Provider names link into their own section of the setup guide.
-		await expect(await canvas.findByRole("link", { name: "Anthropic" })).toHaveAttribute(
-			"href",
-			`${PROVIDERS_DOCS_URL}#direct-model-apis`,
-		);
-		await expect((await canvas.findAllByRole("link", { name: "BrightData" }))[0]).toHaveAttribute(
-			"href",
-			`${PROVIDERS_DOCS_URL}#brightdata`,
-		);
-		await expect(await canvas.findByRole("link", { name: /provider setup guide/i })).toBeVisible();
+		// Online Reset: no public setup guide yet (brand-links.ts), so provider
+		// names are plain text and the guide button is absent.
+		await expect(await canvas.findByText("Anthropic")).toBeVisible();
+		await expect(canvas.queryByRole("link", { name: "Anthropic" })).toBeNull();
+		await expect(canvas.queryByRole("link", { name: "BrightData" })).toBeNull();
+		await expect(canvas.queryByRole("link", { name: /provider setup guide/i })).toBeNull();
 	},
 };
 

@@ -94,7 +94,8 @@ describe("getDeployment", () => {
 	});
 
 	it("promotes Elmo Cloud only on Elmo's own demo, not a read-only self-hosted install", () => {
-		expect(getDeployment({ env: { DEPLOYMENT_MODE: "demo" } }).features.promotesCloud).toBe(true);
+		// Online Reset: off until a hosted app URL is configured in brand-links.ts.
+		expect(getDeployment({ env: { DEPLOYMENT_MODE: "demo" } }).features.promotesCloud).toBe(false);
 		resetDeploymentCache();
 		expect(getDeployment({ env: { DEPLOYMENT_MODE: "local", READ_ONLY: "true" } }).features.promotesCloud).toBe(false);
 		expect(getDeploymentFeatures({ env: { DEPLOYMENT_MODE: "local", READ_ONLY: "true" } }).promotesCloud).toBe(false);

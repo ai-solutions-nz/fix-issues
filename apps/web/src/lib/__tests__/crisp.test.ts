@@ -74,7 +74,9 @@ describe("initCrisp", () => {
 });
 
 describe("the demo next steps", () => {
-	it("offers every next step the first time the chat is opened, and only then", async () => {
+	// Online Reset: no walkthrough, sign-up or docs site exists yet (brand-links.ts),
+	// so only the greeting is shown, and no message links anywhere.
+	it("greets once on first open and offers no link while no destination exists", async () => {
 		const { initCrisp } = await loadCrisp();
 
 		initCrisp("website-id", "demo");
@@ -83,15 +85,10 @@ describe("the demo next steps", () => {
 		fire("chat:opened");
 
 		const shown = queue().filter((command) => command[0] === "do" && command[1] === "message:show");
-		expect(shown, "reopening the chat must not repeat the sequence").toHaveLength(2);
-
-		const [, nextSteps] = (shown[1]?.[2] ?? []) as [string, string];
-		const linked = [...String(nextSteps).matchAll(/\]\((https?:[^)]+)\)/g)].map((match) => match[1]);
-		expect(linked).toEqual([
-			"https://www.elmohq.com/demo?ref=demo-chat",
-			"https://app.elmohq.com/auth/register?ref=demo-chat",
-			"https://www.elmohq.com/docs/getting-started",
-		]);
+		expect(shown, "reopening the chat must not repeat the sequence").toHaveLength(1);
+		const text = JSON.stringify(shown);
+		expect(text).toContain("Online Reset demo");
+		expect(text).not.toMatch(/https?:/);
 	});
 
 	it("is not offered on cloud, which shares the same chatbox", async () => {

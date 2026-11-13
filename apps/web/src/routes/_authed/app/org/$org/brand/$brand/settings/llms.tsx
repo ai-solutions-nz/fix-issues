@@ -386,15 +386,18 @@ function AddPlatformsCard({ platforms }: { platforms: ModelPickerState["unconfig
 						</div>
 					))}
 				</div>
-				<a
-					href={PROVIDERS_DOCS_URL}
-					target="_blank"
-					rel="noopener noreferrer"
-					className={buttonVariants({ variant: "outline", size: "sm" })}
-				>
-					Provider setup guide
-					<IconExternalLink className="h-4 w-4" />
-				</a>
+				{/* Online Reset: shown once public docs exist (brand-links.ts). */}
+				{PROVIDERS_DOCS_URL && (
+					<a
+						href={PROVIDERS_DOCS_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						className={buttonVariants({ variant: "outline", size: "sm" })}
+					>
+						Provider setup guide
+						<IconExternalLink className="h-4 w-4" />
+					</a>
+				)}
 			</CardContent>
 		</Card>
 	);
@@ -406,17 +409,23 @@ function ProviderLinks({ providers }: { providers: ModelPickerState["unconfigure
 
 	return (
 		<span className="flex flex-wrap gap-x-2 gap-y-1">
-			{providers.map((provider) => (
-				<a
-					key={provider.id}
-					href={provider.docsUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					className="text-sm text-muted-foreground underline decoration-dotted hover:text-foreground"
-				>
-					{provider.name}
-				</a>
-			))}
+			{providers.map((provider) =>
+				!provider.docsUrl ? (
+					<span key={provider.id} className="text-sm text-muted-foreground">
+						{provider.name}
+					</span>
+				) : (
+					<a
+						key={provider.id}
+						href={provider.docsUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-sm text-muted-foreground underline decoration-dotted hover:text-foreground"
+					>
+						{provider.name}
+					</a>
+				),
+			)}
 		</span>
 	);
 }

@@ -6,7 +6,7 @@ import { setMockRouteContext } from "./_mocks/tanstack-router";
 
 const ApiSettingsPage = (Route as unknown as { options: { component: ComponentType } }).options.component;
 
-function load(mode = "cloud", appName = "Elmo", appUrl = "https://app.elmohq.com/", readOnly = false) {
+function load(mode = "cloud", appName = "Online Reset", appUrl = "https://reset.example.com/", readOnly = false) {
 	setMockRouteContext({ clientConfig: { mode, branding: { name: appName, url: appUrl }, features: { readOnly } } });
 }
 
@@ -45,9 +45,9 @@ export const Reference: Story = {
 		);
 		// The reference reads the instance's own spec rather than a hosted copy.
 		await expect(await canvas.findByTestId("api-reference-mock")).toHaveTextContent("/api/v1/openapi.json");
-		await expect(canvas.getByText("npm install @elmohq/sdk")).toBeVisible();
-		// The SDKs can't guess the instance, so the snippet names this one.
-		await expect(canvas.getByText(new RegExp(`ELMO_BASE_URL=${window.location.origin}/api/v1`))).toBeVisible();
+		// Online Reset: the typed SDKs are the upstream project's packages, so none is advertised.
+		await expect(canvas.queryByRole("heading", { name: "SDKs" })).toBeNull();
+		await expect(canvas.queryByText(/elmo/i)).toBeNull();
 	},
 };
 
@@ -58,7 +58,8 @@ export const SelfHosted: Story = {
 	},
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
-		await expect(await canvas.findByRole("tab", { name: "Python" })).toBeVisible();
+		await expect(await canvas.findByRole("heading", { name: "API Docs" })).toBeVisible();
+		await expect(canvas.queryByRole("tab", { name: "Python" })).toBeNull();
 	},
 };
 
@@ -70,19 +71,19 @@ export const Whitelabel: Story = {
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 		await expect(await canvas.findByText("Programmatic interface for Acme Visibility.")).toBeVisible();
-		// Nothing on the page names the vendor, so the Elmo-branded SDKs stay hidden.
+		// Nothing on the page names the upstream vendor.
 		await expect(canvas.queryByText(/elmo/i)).toBeNull();
 	},
 };
 
 export const ReadOnlyDeployment: Story = {
 	render: () => {
-		load("demo", "Elmo", "https://app.elmohq.com/", true);
+		load("demo", "Online Reset", "https://reset.example.com/", true);
 		return <ApiSettingsPage />;
 	},
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 		await expect(await canvas.findByText("API access is disabled in demo mode.")).toBeVisible();
-		await expect(canvas.getByRole("heading", { name: "SDKs" })).toBeVisible();
+		await expect(canvas.queryByRole("heading", { name: "SDKs" })).toBeNull();
 	},
 };

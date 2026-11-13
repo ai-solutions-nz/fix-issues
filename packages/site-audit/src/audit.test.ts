@@ -315,7 +315,7 @@ describe("auditSites", () => {
 		const open = await serve(routes);
 		const blocked = await serve(() => ({
 			...routes(),
-			"/robots.txt": { type: "text/plain", body: "User-agent: ElmoBot\nDisallow: /\n" },
+			"/robots.txt": { type: "text/plain", body: "User-agent: OnlineResetBot\nDisallow: /\n" },
 		}));
 
 		const openReport = await audit(open);
@@ -326,9 +326,9 @@ describe("auditSites", () => {
 		expect(blockedReport.score ?? 100).toBeLessThan(50);
 	});
 
-	it("never fetches paths robots.txt disallows for ElmoBot", async () => {
+	it("never fetches paths robots.txt disallows for OnlineResetBot", async () => {
 		const fixture = await serve((origin) => ({
-			"/robots.txt": { type: "text/plain", body: "User-agent: ElmoBot\nDisallow: /private\n" },
+			"/robots.txt": { type: "text/plain", body: "User-agent: OnlineResetBot\nDisallow: /private\n" },
 			"/": {
 				body: page(
 					"Home",
@@ -386,7 +386,7 @@ describe("auditSites", () => {
 
 	it("honors robots.txt rules even when they're served as HTML", async () => {
 		const fixture = await serve((origin) => ({
-			"/robots.txt": { type: "text/html", body: "User-agent: ElmoBot\nDisallow: /private\n" },
+			"/robots.txt": { type: "text/html", body: "User-agent: OnlineResetBot\nDisallow: /private\n" },
 			"/": { body: page("Home", `${LONG_TEXT}<a href="${origin}/private/page">Private</a>`) },
 		}));
 

@@ -32,12 +32,13 @@ export const Install: Story = {
 		setMockLoaderData({ organization: { id: "org-1", name: "Acme", slug: "acme" } });
 		return <SkillPage />;
 	},
+	// Online Reset: the route refuses until a skill is published (brand-links.ts),
+	// and nothing it would render points at the upstream project.
 	play: async ({ canvasElement }) => {
+		const beforeLoad = (Route as unknown as { options: { beforeLoad: (args: unknown) => void } }).options.beforeLoad;
+		await expect(() => beforeLoad({ context: { clientConfig: { mode: "cloud" } } })).toThrow();
 		const canvas = within(canvasElement);
-		await expect(await canvas.findByText("npx skills add elmohq/elmo")).toBeVisible();
-		await expect(canvas.getByRole("link", { name: "skills/aeo" })).toHaveAttribute(
-			"href",
-			"https://github.com/elmohq/elmo/tree/main/skills/aeo",
-		);
+		await expect(await canvas.findByRole("heading", { name: "Skill" })).toBeVisible();
+		await expect(canvasElement.innerHTML).not.toMatch(/elmohq/);
 	},
 };

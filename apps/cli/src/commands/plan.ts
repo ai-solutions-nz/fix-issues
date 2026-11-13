@@ -220,7 +220,7 @@ async function assembleContext(paths: string[], options: PlanOptions, maxBytes: 
 
 	if (options.evalDir) {
 		const evalContext = await readEvalContext(options.evalDir);
-		if (evalContext) parts.push(`<<< PRIOR ELMO EVAL FINDINGS >>>\n${evalContext}`);
+		if (evalContext) parts.push(`<<< PRIOR EVAL FINDINGS >>>\n${evalContext}`);
 	}
 
 	return parts.join("\n\n");

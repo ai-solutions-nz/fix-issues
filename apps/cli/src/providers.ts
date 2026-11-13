@@ -5,14 +5,14 @@ import pc from "picocolors";
 import type { EnvMap } from "./config.js";
 import { assertNotCancelled, link } from "./util.js";
 
-// The affiliate links carry a sub-ID (`fp_sid` for Cloro, `sid` for BrightData), so referrals are attributable
-// per surface: `cli` here, `docs` and `blog` on the links in packages/docs.
-const CLORO_AFFILIATE = "https://cloro.dev?fpr=elmo&fp_sid=cli";
-const BRIGHTDATA_AFFILIATE = "https://get.brightdata.com/elmo?sid=cli";
-const OXYLABS_AFFILIATE = "https://oxylabs.go2cloud.org/aff_c?offer_id=7&aff_id=2263&url_id=32";
-const SEARCHAPI_AFFILIATE = "https://www.searchapi.io/?via=elmo";
-const OLOSTEP_AFFILIATE = "https://olostep.com/?ref=elmo";
-const DATAFORSEO_AFFILIATE = "https://try.dataforseo.com/elmo";
+// Online Reset: plain sign-up pages. The upstream links carried the upstream
+// project's affiliate ids; we have no affiliate arrangements.
+const CLORO_AFFILIATE = "https://cloro.dev";
+const BRIGHTDATA_AFFILIATE = "https://brightdata.com";
+const OXYLABS_AFFILIATE = "https://oxylabs.io";
+const SEARCHAPI_AFFILIATE = "https://www.searchapi.io";
+const OLOSTEP_AFFILIATE = "https://olostep.com";
+const DATAFORSEO_AFFILIATE = "https://dataforseo.com";
 
 export type RecommendedScraper = "cloro" | "brightdata" | "oxylabs" | "searchapi" | "olostep" | "dataforseo";
 export type DirectApiProvider = "openrouter" | "anthropic" | "openai" | "mistral";
@@ -310,8 +310,8 @@ export async function finalizeScrapeTargets(
 	const deduped = dedupeTargets(targets);
 
 	if (!deduped) {
-		p.log.warn("No SCRAPE_TARGETS configured. Elmo will not run scheduled checks until you set them.");
-		p.log.info(`Reference: ${link(pc.cyan(PROVIDERS_DOCS_URL), PROVIDERS_DOCS_URL)}`);
+		p.log.warn("No SCRAPE_TARGETS configured. Online Reset will not run scheduled checks until you set them.");
+		if (PROVIDERS_DOCS_URL) p.log.info(`Reference: ${link(pc.cyan(PROVIDERS_DOCS_URL), PROVIDERS_DOCS_URL)}`);
 
 		const addManual = await p.confirm({
 			message: "Enter SCRAPE_TARGETS manually now?",
@@ -342,7 +342,7 @@ export async function finalizeScrapeTargets(
 	assertNotCancelled(customize);
 
 	if (customize) {
-		p.log.info(`Reference: ${link(pc.cyan(PROVIDERS_DOCS_URL), PROVIDERS_DOCS_URL)}`);
+		if (PROVIDERS_DOCS_URL) p.log.info(`Reference: ${link(pc.cyan(PROVIDERS_DOCS_URL), PROVIDERS_DOCS_URL)}`);
 		const manual = await p.text({
 			message: "SCRAPE_TARGETS",
 			initialValue: deduped,

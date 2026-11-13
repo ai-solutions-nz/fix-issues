@@ -1,21 +1,14 @@
 import crypto from "node:crypto";
 import * as p from "@clack/prompts";
 
-const ELMO_ASCII = [
-	"",
-	"      ▄▄                ",
-	"      ██                ",
-	"▄█▀█▄ ██ ███▄███▄ ▄███▄ ",
-	"██▄█▀ ██ ██ ██ ██ ██ ██ ",
-	"▀█▄▄▄ ██ ██ ██ ██ ▀███▀ ",
-	"",
-].join("\n");
+// Online Reset: a plain wordmark in place of the upstream ASCII logo.
+const BANNER = ["", "  Online Reset", ""].join("\n");
 
 export function printBanner(): void {
 	// Tailwind's blue-600.
 	const blue = "\x1b[38;2;37;99;235m";
 	const reset = "\x1b[0m";
-	console.log(`${blue}${ELMO_ASCII}${reset}`);
+	console.log(`${blue}${BANNER}${reset}`);
 }
 
 export const log = {

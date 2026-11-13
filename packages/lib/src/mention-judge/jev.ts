@@ -61,7 +61,8 @@ export function openRouterTransport(apiKey: () => string | undefined, fetchImpl:
 		() => {
 			const key = apiKey();
 			// Removed from settings since startup: say so, rather than send no key and report it rejected.
-			if (!key) throw new Error("OPENROUTER_API_KEY is no longer set; Elmo calls Jev through OpenRouter with it");
+			if (!key)
+				throw new Error("OPENROUTER_API_KEY is no longer set; Online Reset calls Jev through OpenRouter with it");
 			return key;
 		},
 		"OPENROUTER_API_KEY",

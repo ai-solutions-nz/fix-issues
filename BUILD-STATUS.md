@@ -129,7 +129,46 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 ## Known bugs and limitations
 
 - **Where database tenant scope does not apply.** Requests with no session always run in an empty scope (no tenant rows); the signed-out allowlist is empty. Instance administrators (a user with the `admin` role, or an instance admin API key) and of the background worker, which is system work. Server functions are covered by the global middleware; the isolation suite verifies that registration and the scope it applies, but it calls the REST routes and MCP tools individually, not each of the ~118 server functions. Those functions use the same core query modules the REST routes and MCP tools exercise.
-- **Elmo branding remains in places.** About 60 references remain, including email templates, the version label, docs and GitHub links in the footer, the CLI and the floating dev widget. Per-tenant branding and custom domains are not built; Elmo's white-label mode is per-instance.
+- **Branding (Packet 2).** User-visible Elmo references are replaced with Online Reset, and nothing links to the upstream project's sites. `rg -i "elmo" apps packages docs` (licence files, `UPSTREAM.md`, `THIRD_PARTY_NOTICES.md`, `node_modules` and build output excluded) went from **848 lines in 160 files to 675 lines in 130 files**.
+  - **Changed:**
+    - email templates;
+    - sign-in, MCP consent and report pages;
+    - the footer: the version is plain text, and the website, GitHub and legal links are hidden;
+    - the cookie banner and the OG image wordmark;
+    - the MCP server name and instructions;
+    - the OpenAPI title, contact and licence, and its changelog and docs links;
+    - the site-audit crawler, now `OnlineResetBot/1.0` with no URL;
+    - the OpenRouter `X-Title`, with no upstream referer;
+    - Stripe product names in the bootstrap script;
+    - CLI prose, banner and README.
+  - **Removed:**
+    - the CLI's GitHub-star message and hosted-plan upsell;
+    - affiliate referral ids on provider sign-up links;
+    - the support chat's upstream Crisp id (the floating widget no longer loads);
+    - the upstream SDK snippets on the API page;
+    - the Skill page, until a skill is published;
+    - customer testimonials about Elmo (deleted, not relabelled);
+    - the custom-plan mailto links;
+    - the demo's cloud promotion.
+  - **Placeholders:** every public URL now comes from `packages/config/src/brand-links.ts`: site, hosted app, demo, docs, source, legal, skill repo, contact email and support chat. All are empty, so each link built from one is hidden or omitted. Set them there when the sites exist.
+  - **Kept, and why** (675 lines):
+    - **Research docs (155) and changelogs (72):** analysis and history of the upstream project.
+    - **Tests (169) and stories (46):** identifier fixtures (`elmo_` keys, `ELMO_ENCRYPTION_KEY`, Compose output) and sample brand text.
+    - **In source (233):**
+      - 88: the CLI executable `elmo`, package `@elmohq/cli`, `elmo.yaml`, `~/.elmo`, the upstream-published `elmohq/elmo-*` Docker images and the Compose DB name. Renaming would break existing installs, and we publish no images of our own.
+      - 48: stored or external identifiers. These are `ELMO_ENCRYPTION_KEY` (encrypted rows), the API key prefix `elmo_` (issued keys), Auth0 claims `elmo_*`, Stripe lookup keys `elmo_cloud_*`/`elmo_catalog_key` (existing Stripe objects), browser storage and event keys, advisory-lock names, the secret key-id salt (changing it orphans stored secrets), the OpenAPI extension `x-elmo-admin-only`, and a `Symbol.for` key.
+      - 16: code identifiers (`ELMO_*` colour constants, `isElmoHosted`).
+      - 41: icon file names and the brand-asset generator scripts. The favicon and app icons are still upstream's "e" artwork; replacing them needs a design.
+      - 20: developer comments that describe upstream behaviour.
+      - 9: false positives (news domains such as `elmonteexaminer.com`).
+      - 1: an applied migration's comment.
+      - 5: test-database examples and dev-script paths.
+      - 4: upstream hosts not shown to users (the PostHog proxy `var.elmohq.com`, its CSP entries, ad-tag production hosts).
+      - 1: the demo login account `demo@elmohq.com`, which only exists in upstream's hosted demo.
+  - **Not done (out of scope):**
+    - new icon artwork;
+    - the CLI still asks the telemetry and newsletter questions, and its telemetry note still describes PostHog, though both calls are no-ops;
+    - an operator who sets `VITE_POSTHOG_KEY` would still send events through upstream's `var.elmohq.com` proxy. Point `POSTHOG_HOST` at our own host before enabling analytics.
 - **"Publish" uses the brand's first CMS connection.** There is no UI to add or manage CMS connections, edit the brand profile, invite client users or grant them brands. These are currently set up through the service functions or the demo script.
 - **The demo's mock WordPress stops when the demo exits.** Publishing from the UI afterwards fails, and the failure is recorded as `failed`, until a real or mock CMS is connected.
 - **Embeddings are lexical, not semantic.** Question clustering uses a free, deterministic hash embedding stored as `real[]`; pgvector and model embeddings are not wired. As a result, paraphrases that share no words are not merged.

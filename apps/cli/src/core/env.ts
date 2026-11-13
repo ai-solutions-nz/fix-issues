@@ -8,7 +8,7 @@ import { log } from "./ui.js";
 export interface LoadedEnv {
 	/**
 	 * Directory the `.env` was loaded from (used for telemetry). Undefined when
-	 * no Elmo `.env` was found and we're running purely off the ambient
+	 * no Online Reset `.env` was found and we're running purely off the ambient
 	 * environment.
 	 */
 	configDir?: string;
@@ -39,7 +39,7 @@ export async function loadElmoEnv(explicitDir?: string): Promise<LoadedEnv> {
 				`No .env found at ${envPath}. Run \`elmo init --dir ${explicitDir}\` first, or export the provider keys yourself.`,
 			);
 		}
-		log.warn(`No Elmo config found at ${envPath}; using the current environment for provider keys.`);
+		log.warn(`No Online Reset config found at ${envPath}; using the current environment for provider keys.`);
 		return { loaded: false };
 	}
 

@@ -1,5 +1,6 @@
 // Crisp replays anything pushed onto `window.$crisp` once its script loads, so
 // nothing here has to wait for a ready signal.
+import { PUBLIC_DOCS_URL } from "@workspace/config/brand-links";
 import { bookDemoUrl, cloudSignupUrl } from "@workspace/config/referrals";
 import type { DeploymentMode } from "@workspace/config/types";
 
@@ -17,26 +18,34 @@ const CRISP_SCRIPT_URL = "https://client.crisp.chat/l.js";
 
 const DEMO_WALKTHROUGH_URL = bookDemoUrl("demo-chat");
 const DEMO_CLOUD_SIGNUP_URL = cloudSignupUrl("demo-chat");
-const SELF_HOST_DOCS_URL = "https://www.elmohq.com/docs/getting-started";
+const SELF_HOST_DOCS_URL = PUBLIC_DOCS_URL ? `${PUBLIC_DOCS_URL}/getting-started` : "";
 
 const DEMO_GREETING =
-	"👋 You're in the Elmo demo — it's read-only sample data, so click around freely. Ask me anything as you go.";
+	"👋 You're in the Online Reset demo — it's read-only sample data, so click around freely. Ask me anything as you go.";
 
 // Not a carousel: at chatbox width its track shows one card at a time, which
 // left the last option off screen.
-const DEMO_NEXT_STEPS = [
-	"Whenever you're ready:",
-	`• [Book a walkthrough](${DEMO_WALKTHROUGH_URL}) — 30 minutes on your own brand's data`,
-	`• [Start with Elmo Cloud](${DEMO_CLOUD_SIGNUP_URL}) — the managed version, nothing to deploy`,
-	`• [Self-host it free](${SELF_HOST_DOCS_URL}) — open source, running in about five minutes`,
-].join("\n");
+// Online Reset: only steps whose destination exists (brand-links.ts) are offered.
+const DEMO_STEP_LINES = [
+	[DEMO_WALKTHROUGH_URL, `• [Book a walkthrough](${DEMO_WALKTHROUGH_URL}) — 30 minutes on your own brand's data`],
+	[
+		DEMO_CLOUD_SIGNUP_URL,
+		`• [Start with Online Reset](${DEMO_CLOUD_SIGNUP_URL}) — the managed version, nothing to deploy`,
+	],
+	[SELF_HOST_DOCS_URL, `• [Self-host it free](${SELF_HOST_DOCS_URL}) — open source, running in about five minutes`],
+]
+	.filter(([url]) => url)
+	.map(([, line]) => line);
+const DEMO_NEXT_STEPS = DEMO_STEP_LINES.length ? ["Whenever you're ready:", ...DEMO_STEP_LINES].join("\n") : "";
 
-// So an operator picking up the thread points at the same three places.
-const DEMO_SESSION_DATA: [string, string][] = [
-	["walkthrough_url", DEMO_WALKTHROUGH_URL],
-	["self_host_docs_url", SELF_HOST_DOCS_URL],
-	["cloud_signup_url", DEMO_CLOUD_SIGNUP_URL],
-];
+// So an operator picking up the thread points at the same places.
+const DEMO_SESSION_DATA: [string, string][] = (
+	[
+		["walkthrough_url", DEMO_WALKTHROUGH_URL],
+		["self_host_docs_url", SELF_HOST_DOCS_URL],
+		["cloud_signup_url", DEMO_CLOUD_SIGNUP_URL],
+	] as [string, string][]
+).filter(([, url]) => url);
 
 interface CrispUser {
 	id: string;
@@ -168,7 +177,7 @@ function demoNextStepsOffer(): () => void {
 		if (offered) return;
 		offered = true;
 		push(["do", "message:show", ["text", DEMO_GREETING]]);
-		push(["do", "message:show", ["text", DEMO_NEXT_STEPS]]);
+		if (DEMO_NEXT_STEPS) push(["do", "message:show", ["text", DEMO_NEXT_STEPS]]);
 	};
 }
 

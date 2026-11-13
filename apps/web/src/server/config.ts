@@ -32,7 +32,8 @@ function resolvePosthogKey(): string | undefined {
 export function resolveCrispWebsiteId(): string | undefined {
 	const mode = getDeploymentModeFromEnv();
 	if (mode !== "cloud" && mode !== "demo") return undefined;
-	return CRISP_WEBSITE_ID;
+	// Online Reset: empty until we have our own support chat (brand-links.ts).
+	return CRISP_WEBSITE_ID || undefined;
 }
 
 export const getClientConfig = createServerFn({ method: "GET" }).handler(async (): Promise<PublicClientConfig> => {

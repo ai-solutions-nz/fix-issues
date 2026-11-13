@@ -9,7 +9,7 @@
 
 import { IconBrandGoogle } from "@tabler/icons-react";
 import { createFileRoute, Link, useNavigate, useRouteContext } from "@tanstack/react-router";
-import { MCP_AUTHORIZE_ENDPOINT } from "@workspace/config/constants";
+import { DEFAULT_APP_NAME, MCP_AUTHORIZE_ENDPOINT } from "@workspace/config/constants";
 import type { ClientConfig } from "@workspace/config/types";
 import { authClient } from "@workspace/lib/auth/client";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
@@ -256,7 +256,7 @@ export function EmailPasswordLogin({
 	return (
 		<AuthSplitLayout
 			title="Welcome back"
-			subtitle={isCloud ? "Check in on your AI visibility." : "Sign in to your Elmo instance."}
+			subtitle={isCloud ? "Check in on your AI visibility." : `Sign in to your ${DEFAULT_APP_NAME} instance.`}
 			pitch={<SalesPanel variant={isCloud ? "cloud" : "self-hosted"} source={source} />}
 			footer={<SalesFooterLinks source={source} />}
 		>

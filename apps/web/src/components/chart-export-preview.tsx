@@ -1,3 +1,4 @@
+import { PUBLIC_SITE_URL } from "@workspace/config/brand-links";
 import { DEFAULT_APP_ICON, DEFAULT_APP_NAME } from "@workspace/config/constants";
 import type { Competitor } from "@workspace/lib/db/schema";
 import { Badge } from "@workspace/ui/components/badge";
@@ -45,7 +46,12 @@ export function ChartExportPreview({
 }: ChartExportPreviewProps) {
 	const name = branding.name || DEFAULT_APP_NAME;
 	const isWhitelabel = branding.isWhitelabel && branding.name !== DEFAULT_APP_NAME;
-	const domain = isWhitelabel ? branding.parentUrl?.replace(/^https?:\/\//, "").replace(/\/$/, "") || "" : "elmohq.com";
+	// Online Reset: no public domain to print until one exists (brand-links.ts).
+	const domain = isWhitelabel
+		? branding.parentUrl?.replace(/^https?:\/\//, "").replace(/\/$/, "") || ""
+		: PUBLIC_SITE_URL
+			? new URL(PUBLIC_SITE_URL).host
+			: "";
 	const hasCustomIcon = branding.icon && branding.icon !== DEFAULT_APP_ICON;
 
 	return (
@@ -106,8 +112,8 @@ export function ChartExportPreview({
 							{name}
 						</span>
 					) : (
-						<span className="font-titan-one font-normal lowercase text-blue-600" style={{ fontSize: 24 }}>
-							elmo
+						<span className="font-titan-one font-normal text-blue-600" style={{ fontSize: 24 }}>
+							{DEFAULT_APP_NAME}
 						</span>
 					)}
 				</div>

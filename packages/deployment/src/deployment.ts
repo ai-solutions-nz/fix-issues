@@ -4,6 +4,7 @@
  * so server code never pulls in the React OptimizeButton.
  */
 
+import { PUBLIC_APP_URL } from "@workspace/config/brand-links";
 import { DEFAULT_APP_ICON, DEFAULT_APP_NAME, DEFAULT_APP_URL, DEFAULT_CHART_COLORS } from "@workspace/config/constants";
 import { getDeploymentModeFromEnv, getEnv, requireEnvVars } from "@workspace/config/env";
 import type { BrandingConfig, Deployment, DeploymentMode, FeaturesConfig } from "@workspace/config/types";
@@ -25,7 +26,8 @@ export const FEATURES_BY_MODE: Record<DeploymentMode, FeaturesConfig> = {
 		teamInvites: false,
 	},
 	demo: {
-		promotesCloud: true,
+		// Online Reset: nothing to promote until a hosted app exists (brand-links.ts).
+		promotesCloud: Boolean(PUBLIC_APP_URL),
 		readOnly: true,
 		showOptimizeButton: false,
 		canCreateBrands: false,

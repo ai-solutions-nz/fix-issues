@@ -1,24 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { legalUrl, showsLegalLinks } from "./legal";
 
+// Online Reset: no legal site is configured yet (brand-links.ts), so no
+// deployment links any agreements, and nothing points at the upstream project's.
 describe("showsLegalLinks", () => {
-	it("links Elmo's policies from the deployments Elmo operates or ships", () => {
-		expect(showsLegalLinks("cloud")).toBe(true);
-		expect(showsLegalLinks("demo")).toBe(true);
-		expect(showsLegalLinks("local")).toBe(true);
-	});
-
-	it("stays silent in whitelabel, where the operator's own agreements govern", () => {
-		expect(showsLegalLinks("whitelabel")).toBe(false);
-	});
-
-	it("stays silent before the mode is known", () => {
-		expect(showsLegalLinks(undefined)).toBe(false);
+	it("shows no legal links in any mode while no legal site is configured", () => {
+		for (const mode of ["cloud", "demo", "local", "whitelabel", undefined] as const) {
+			expect(showsLegalLinks(mode)).toBe(false);
+		}
 	});
 });
 
 describe("legalUrl", () => {
-	it("resolves to the published document on the marketing site", () => {
-		expect(legalUrl("terms")).toBe("https://www.elmohq.com/legal/terms");
+	it("is empty while no legal site is configured", () => {
+		expect(legalUrl("terms")).toBe("");
 	});
 });

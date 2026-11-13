@@ -1,8 +1,10 @@
 /** Links back to our sites carry a `ref` naming the surface clicked, since each wants different things. */
+import { PUBLIC_APP_URL, PUBLIC_DEMO_URL, PUBLIC_SITE_URL } from "./brand-links";
 
-export const MARKETING_SITE_URL = "https://www.elmohq.com";
-export const CLOUD_APP_URL = "https://app.elmohq.com";
-const DEMO_SITE_URL = "https://demo.elmohq.com";
+/** Empty until the site exists (brand-links.ts); every helper below then returns "". */
+export const MARKETING_SITE_URL = PUBLIC_SITE_URL;
+export const CLOUD_APP_URL = PUBLIC_APP_URL;
+const DEMO_SITE_URL = PUBLIC_DEMO_URL;
 
 /** A closed set: in analytics a typo is indistinguishable from a real source. */
 export type ReferralSource =
@@ -41,23 +43,25 @@ export type ReferralSource =
 	| "marketing-pricing-pro"
 	| "marketing-pricing-business";
 
-function tagged(url: string, ref: ReferralSource): string {
-	const link = new URL(url);
+/** `path` on `base`, tagged with `ref`; "" when `base` is not configured, so callers can hide the link. */
+export function taggedUrl(base: string, path: string, ref: ReferralSource): string {
+	if (!base) return "";
+	const link = new URL(path, base);
 	link.searchParams.set("ref", ref);
 	return link.toString();
 }
 
 export function marketingUrl(path: string, ref: ReferralSource): string {
-	return tagged(new URL(path, MARKETING_SITE_URL).toString(), ref);
+	return taggedUrl(MARKETING_SITE_URL, path, ref);
 }
 
 /** Routes new visitors to sign-up on its own. */
 export function cloudAppUrl(ref: ReferralSource): string {
-	return tagged(`${CLOUD_APP_URL}/`, ref);
+	return taggedUrl(CLOUD_APP_URL, "/", ref);
 }
 
 export function cloudSignupUrl(ref: ReferralSource): string {
-	return tagged(`${CLOUD_APP_URL}/auth/register`, ref);
+	return taggedUrl(CLOUD_APP_URL, "/auth/register", ref);
 }
 
 export function cloudPricingUrl(ref: ReferralSource): string {
@@ -69,5 +73,5 @@ export function bookDemoUrl(ref: ReferralSource): string {
 }
 
 export function demoSiteUrl(ref: ReferralSource, path = "/"): string {
-	return tagged(new URL(path, DEMO_SITE_URL).toString(), ref);
+	return taggedUrl(DEMO_SITE_URL, path, ref);
 }

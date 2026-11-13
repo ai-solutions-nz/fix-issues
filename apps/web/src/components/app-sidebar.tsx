@@ -20,6 +20,7 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
+import { PUBLIC_SKILL_REPO } from "@workspace/config/brand-links";
 import type { DeploymentMode, FeaturesConfig } from "@workspace/config/types";
 import { brandLinkParams, orgLinkParams } from "@workspace/lib/app-urls";
 import type { BrandWithPrompts } from "@workspace/lib/db/schema";
@@ -73,8 +74,8 @@ function organizationGroups(
 		{ title: "MCP", link: { to: "/app/org/$org/settings/mcp", params }, icon: IconPlugConnected },
 	];
 
-	// The skill is Elmo's, and whitelabel deployments never point users at Elmo.
-	if (mode !== "whitelabel") {
+	// Online Reset: shown once a published skill exists (brand-links.ts); never in whitelabel.
+	if (mode !== "whitelabel" && PUBLIC_SKILL_REPO) {
 		docs.push({ title: "Skill", link: { to: "/app/org/$org/settings/skill", params }, icon: IconSchool });
 	}
 

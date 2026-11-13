@@ -1,17 +1,22 @@
+import { PUBLIC_DOCS_URL, PUBLIC_SUPPORT_CHAT_ID } from "./brand-links";
+
 /** Whitelabel never falls back to these; it must set its own branding. */
 export const DEFAULT_APP_NAME = "Online Reset";
 export const DEFAULT_APP_ICON = "/icons/elmo-icon.svg";
 export const DEFAULT_APP_URL = "http://localhost:3000/";
 
-/** Per-provider anchors are appended, so this must stay the page itself, not the docs index. */
-export const PROVIDERS_DOCS_URL = "https://www.elmohq.com/docs/user-guide/providers";
+/**
+ * Per-provider anchors are appended, so this must stay the page itself, not the
+ * docs index. Empty until public docs exist (see brand-links.ts).
+ */
+export const PROVIDERS_DOCS_URL = PUBLIC_DOCS_URL ? `${PUBLIC_DOCS_URL}/user-guide/providers` : "";
 
 /** The public docs, for the hosted product. In the app itself the API and MCP
  * pages document the deployment the viewer is signed in to. */
-export const API_DOCS_URL = "https://www.elmohq.com/docs/api";
+export const API_DOCS_URL = PUBLIC_DOCS_URL ? `${PUBLIC_DOCS_URL}/api` : "";
 
-/** Public identifier for the support chat, shared by the app and the marketing site. */
-export const CRISP_WEBSITE_ID = "2f79a110-4e29-41a8-b45d-4993df6ff487";
+/** Public identifier for the support chat. Empty: no support chat yet (the upstream id was the upstream project's). */
+export const CRISP_WEBSITE_ID = PUBLIC_SUPPORT_CHAT_ID;
 
 export const ELMO_BRAND_COLOR = "#2563eb"; // blue-600
 export const ELMO_BRAND_FONT = "Titan One";

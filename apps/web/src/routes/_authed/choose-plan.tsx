@@ -11,6 +11,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { PUBLIC_CONTACT_EMAIL } from "@workspace/config/brand-links";
 import { isPlanKey, PLANS, type PlanKey } from "@workspace/config/plans";
 import { authClient } from "@workspace/lib/auth/client";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
@@ -196,13 +197,16 @@ function PlanPicker({ paywall }: { paywall: PaywallRequired }) {
 
 			<LegalConsentNotice action="subscribing" />
 
-			<p className="text-center text-sm text-muted-foreground">
-				Need more brands, any other models, higher numbers of samples, SSO, white label, or custom limits?{" "}
-				<a className="underline" href="mailto:hello@elmohq.com?subject=Elmo%20Cloud%20custom%20plan">
-					Talk to us about a custom plan
-				</a>
-				.
-			</p>
+			{/* Online Reset: shown once there is an enquiries address (brand-links.ts). */}
+			{PUBLIC_CONTACT_EMAIL && (
+				<p className="text-center text-sm text-muted-foreground">
+					Need more brands, any other models, higher numbers of samples, SSO, white label, or custom limits?{" "}
+					<a className="underline" href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=Custom%20plan`}>
+						Talk to us about a custom plan
+					</a>
+					.
+				</p>
+			)}
 		</div>
 	);
 }

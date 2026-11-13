@@ -41,10 +41,10 @@ export const HeaderCta: StoryObj = {
 		applyConfig(demoConfig);
 		return <DemoSignupCta />;
 	},
+	// Online Reset: no hosted sign-up exists yet (brand-links.ts), so even a demo
+	// that promotes it shows no call to action, rather than a dead link.
 	play: async ({ canvasElement }) => {
-		const link = await within(canvasElement).findByRole("link", { name: "Track Your Brand" });
-		await expect(link).toHaveAttribute("href", "https://app.elmohq.com/auth/register?ref=demo-header");
-		await expect(link).toHaveAttribute("target", "_blank");
+		await expect(within(canvasElement).queryByRole("link")).toBeNull();
 	},
 };
 
@@ -67,9 +67,9 @@ export const ReadOnlyRefusal: StoryObj = {
 	},
 	play: async ({ canvasElement }) => {
 		const alert = await within(canvasElement).findByRole("alert");
-		await expect(alert).toHaveTextContent("The demo is read-only");
-		const link = within(alert).getByRole("link", { name: "Elmo Cloud" });
-		await expect(link).toHaveAttribute("href", "https://app.elmohq.com/auth/register?ref=demo-read-only");
+		// Online Reset: the plain refusal, with no sign-up link, until a hosted app exists.
+		await expect(alert).toHaveTextContent(READ_ONLY_REFUSED);
+		await expect(within(alert).queryByRole("link")).toBeNull();
 	},
 };
 

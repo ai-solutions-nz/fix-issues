@@ -82,7 +82,9 @@ export function describeProvider(id: string): { id: string; name: string; access
 		id,
 		name: provider.name,
 		access: provider.access,
-		docsUrl: provider.docsAnchor ? `${PROVIDERS_DOCS_URL}#${provider.docsAnchor}` : PROVIDERS_DOCS_URL,
+		// "" until public docs exist (brand-links.ts); the UI then shows the name without a link.
+		docsUrl:
+			PROVIDERS_DOCS_URL && provider.docsAnchor ? `${PROVIDERS_DOCS_URL}#${provider.docsAnchor}` : PROVIDERS_DOCS_URL,
 	};
 }
 

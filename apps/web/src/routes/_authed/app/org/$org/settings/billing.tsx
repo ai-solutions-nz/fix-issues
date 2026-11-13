@@ -1,5 +1,6 @@
 import { IconArrowUpRight, IconChevronDown, IconExternalLink } from "@tabler/icons-react";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { PUBLIC_CONTACT_EMAIL } from "@workspace/config/brand-links";
 import type { Entitlements } from "@workspace/config/entitlements";
 import {
 	PLAN_KEYS,
@@ -530,6 +531,8 @@ function PlanCard({
 }
 
 function CustomPlanCallout() {
+	// Online Reset: no enquiries address yet (brand-links.ts), so no "talk to us" prompt.
+	if (!PUBLIC_CONTACT_EMAIL) return null;
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed p-4">
 			<div>
@@ -540,7 +543,7 @@ function CustomPlanCallout() {
 			</div>
 			<a
 				className={buttonVariants({ variant: "outline", size: "sm" })}
-				href="mailto:hello@elmohq.com?subject=Elmo%20Cloud%20custom%20plan"
+				href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=Custom%20plan`}
 			>
 				Talk to us
 				<IconArrowUpRight className="h-4 w-4" />

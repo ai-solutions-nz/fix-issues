@@ -24,7 +24,7 @@ export function refreshHeaderVersion(contents: string, version: string): string 
 	);
 }
 
-// Only Elmo's own images: a Postgres major bump needs a dump and restore, so
+// Only the app's own images (still published upstream as elmohq/elmo-*): a Postgres major bump needs a dump and restore, so
 // rolling its tag would break the deployment.
 export function repinImages(contents: string, version: string): string {
 	return contents.replace(/(image:\s*elmohq\/elmo-[a-z-]+):\S+/g, `$1:${version}`);

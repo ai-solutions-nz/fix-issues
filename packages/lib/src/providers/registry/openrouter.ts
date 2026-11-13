@@ -20,8 +20,9 @@ function openrouterHeaders(): Record<string, string> {
 	return {
 		Authorization: `Bearer ${getCredential("OPENROUTER_API_KEY")}`,
 		"Content-Type": "application/json",
-		"HTTP-Referer": process.env.APP_URL ?? "https://github.com/elmohq/elmo",
-		"X-Title": "Elmo AEO",
+		// Online Reset: identifies this deployment to OpenRouter, never the upstream project.
+		...(process.env.APP_URL ? { "HTTP-Referer": process.env.APP_URL } : {}),
+		"X-Title": "Online Reset",
 	};
 }
 

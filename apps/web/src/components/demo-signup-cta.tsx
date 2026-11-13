@@ -6,7 +6,7 @@ import { useDeploymentFeatures } from "@/hooks/use-deployment-features";
 const SIGNUP_URL = cloudSignupUrl("demo-header");
 
 export function DemoSignupCta() {
-	if (!useDeploymentFeatures()?.promotesCloud) return null;
+	if (!useDeploymentFeatures()?.promotesCloud || !SIGNUP_URL) return null;
 
 	return (
 		<a

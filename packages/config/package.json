@@ -8,6 +8,7 @@
 		"test": "vitest run"
 	},
 	"exports": {
+		"./brand-links": "./src/brand-links.ts",
 		"./constants": "./src/constants.ts",
 		"./entitlements": "./src/entitlements.ts",
 		"./env": "./src/env.ts",

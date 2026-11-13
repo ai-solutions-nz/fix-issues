@@ -2,7 +2,8 @@ import type { ParsedPage } from "./parse/html";
 
 export const REPORT_SCHEMA_VERSION = 1;
 
-export const DEFAULT_USER_AGENT = "ElmoBot/1.0 (+https://www.elmohq.com/docs/user-guide/agent-readiness-audit#elmobot)";
+/** Online Reset: no public page describes the bot yet (brand-links.ts), so the user agent carries no URL. */
+export const DEFAULT_USER_AGENT = "OnlineResetBot/1.0";
 
 export type CheckStatus = "pass" | "warn" | "fail" | "info" | "not_checked";
 

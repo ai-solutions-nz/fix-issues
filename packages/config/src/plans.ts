@@ -1,5 +1,5 @@
 /**
- * The Elmo Cloud plan catalog: billing, write-time enforcement, the run policy
+ * The hosted plan catalog: billing, write-time enforcement, the run policy
  * and the pricing UI all read it. Stripe prices are found by lookup key, which
  * packages/deployment/scripts/bootstrap-stripe.ts provisions in any account.
  */
@@ -11,7 +11,7 @@ export type PlanKey = "starter" | "basic" | "pro" | "business";
 
 export type BillingInterval = "monthly" | "annual";
 
-/** Whether Elmo Cloud reaches a platform by scraping its product or calling an API. */
+/** Whether the hosted product reaches a platform by scraping its product or calling an API. */
 export type ProviderAccessKind = "scraped" | "api";
 
 export interface CloudPlatform {
@@ -370,6 +370,6 @@ export function summarizeSubscriptionCost(input: {
 	};
 }
 
-export const CLOUD_SIGNUP_URL = `${CLOUD_APP_URL}/auth/register`;
+export const CLOUD_SIGNUP_URL = CLOUD_APP_URL ? `${CLOUD_APP_URL}/auth/register` : "";
 
 export const CLOUD_ENTRY_PRICE_USD = Math.min(...PLAN_KEYS.map((key) => PLANS[key].monthlyPriceUsd));

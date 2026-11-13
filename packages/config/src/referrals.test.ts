@@ -1,34 +1,41 @@
 import { describe, expect, it } from "vitest";
-import { bookDemoUrl, cloudAppUrl, cloudPricingUrl, cloudSignupUrl, demoSiteUrl, marketingUrl } from "./referrals";
+import {
+	bookDemoUrl,
+	cloudAppUrl,
+	cloudPricingUrl,
+	cloudSignupUrl,
+	demoSiteUrl,
+	marketingUrl,
+	taggedUrl,
+} from "./referrals";
 
 /**
- * The contract every one of these has to keep: land on the right page, and say
- * where the click came from. A link that quietly drops its ref still works, so
- * only a test notices.
+ * The contract every link has to keep once a site exists: land on the right
+ * page, and say where the click came from. Online Reset has no public site yet
+ * (brand-links.ts), so every builder returns "" and callers hide the link.
  */
 describe("referral links", () => {
-	const builders = {
-		marketing: () => marketingUrl("/docs", "cli"),
-		app: () => cloudAppUrl("cli"),
-		signup: () => cloudSignupUrl("cli"),
-		pricing: () => cloudPricingUrl("cli"),
-		demo: () => bookDemoUrl("cli"),
-		liveDemo: () => demoSiteUrl("cli"),
-	};
-
-	it.each(Object.entries(builders))("%s carries the source", (_name, build) => {
-		expect(new URL(build()).searchParams.get("ref")).toBe("cli");
+	it("tags a configured destination with the source and keeps the path", () => {
+		expect(taggedUrl("https://example.com", "/docs", "cli")).toBe("https://example.com/docs?ref=cli");
+		expect(taggedUrl("https://example.com", "/app/org/acme/brand/acme/citations", "marketing-demo-frame")).toBe(
+			"https://example.com/app/org/acme/brand/acme/citations?ref=marketing-demo-frame",
+		);
 	});
 
-	it("points each destination at its own page", () => {
-		expect(marketingUrl("/docs", "cloud-signin")).toBe("https://www.elmohq.com/docs?ref=cloud-signin");
-		expect(cloudAppUrl("marketing-cta")).toBe("https://app.elmohq.com/?ref=marketing-cta");
-		expect(cloudSignupUrl("cloud-signin")).toBe("https://app.elmohq.com/auth/register?ref=cloud-signin");
-		expect(cloudPricingUrl("cloud-signin")).toBe("https://www.elmohq.com/pricing?ref=cloud-signin");
-		expect(bookDemoUrl("cloud-signin")).toBe("https://www.elmohq.com/demo?ref=cloud-signin");
-		expect(demoSiteUrl("cloud-signin")).toBe("https://demo.elmohq.com/?ref=cloud-signin");
-		expect(demoSiteUrl("marketing-demo-frame", "/app/org/acme/brand/acme/citations")).toBe(
-			"https://demo.elmohq.com/app/org/acme/brand/acme/citations?ref=marketing-demo-frame",
-		);
+	it("returns nothing for an unconfigured destination", () => {
+		expect(taggedUrl("", "/docs", "cli")).toBe("");
+	});
+
+	it("links nowhere while no public site is configured", () => {
+		for (const url of [
+			marketingUrl("/docs", "cli"),
+			cloudAppUrl("cli"),
+			cloudSignupUrl("cli"),
+			cloudPricingUrl("cli"),
+			bookDemoUrl("cli"),
+			demoSiteUrl("cli"),
+		]) {
+			expect(url).toBe("");
+		}
 	});
 });

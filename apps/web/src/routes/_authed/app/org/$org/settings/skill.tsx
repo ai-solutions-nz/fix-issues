@@ -1,12 +1,14 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { PUBLIC_SKILL_REPO, PUBLIC_SOURCE_URL } from "@workspace/config/brand-links";
 import { orgLinkParams } from "@workspace/lib/app-urls";
 import { CodeBlock, InlineCode } from "@/components/code-block";
 import { useOrganization } from "@/hooks/use-organizations";
 import { pageHead } from "@/lib/route-head";
 
-const INSTALL_COMMAND = "npx skills add elmohq/elmo";
-const SKILL_URL = "https://github.com/elmohq/elmo/tree/main/skills/aeo";
-const LAUNCH_POST_URL = "https://www.elmohq.com/blog/aeo-skill";
+// Online Reset: the page exists only once a skill is published (brand-links.ts);
+// the upstream project's skill and blog post are not linked.
+const INSTALL_COMMAND = `npx skills add ${PUBLIC_SKILL_REPO}`;
+const SKILL_URL = PUBLIC_SOURCE_URL ? `${PUBLIC_SOURCE_URL}/tree/main/skills/aeo` : "";
 
 const EXAMPLE_ASKS = [
 	"How's our brand doing in AI search this week?",
@@ -18,7 +20,7 @@ const EXAMPLE_ASKS = [
 export const Route = createFileRoute("/_authed/app/org/$org/settings/skill")({
 	staticData: { crumb: "Skill" },
 	beforeLoad: ({ context }) => {
-		if (context.clientConfig?.mode === "whitelabel") {
+		if (context.clientConfig?.mode === "whitelabel" || !PUBLIC_SKILL_REPO) {
 			throw notFound();
 		}
 	},
@@ -44,9 +46,13 @@ function SkillPage() {
 				<CodeBlock code={INSTALL_COMMAND} />
 				<p className="text-sm text-muted-foreground">
 					The skills CLI finds the agents on your machine and installs the skill for each. To install by hand, copy{" "}
-					<a href={SKILL_URL} target="_blank" rel="noreferrer" className="underline underline-offset-4">
-						skills/aeo
-					</a>{" "}
+					{SKILL_URL ? (
+						<a href={SKILL_URL} target="_blank" rel="noreferrer" className="underline underline-offset-4">
+							skills/aeo
+						</a>
+					) : (
+						<InlineCode>skills/aeo</InlineCode>
+					)}{" "}
 					into your agent's skills directory.
 				</p>
 			</section>
@@ -72,13 +78,7 @@ function SkillPage() {
 				</ul>
 			</section>
 
-			<p className="text-sm text-muted-foreground">
-				The skill is MIT-licensed.{" "}
-				<a href={LAUNCH_POST_URL} target="_blank" rel="noreferrer" className="underline underline-offset-4">
-					Read how it compares with other AEO skills
-				</a>
-				.
-			</p>
+			<p className="text-sm text-muted-foreground">The skill is MIT-licensed.</p>
 		</div>
 	);
 }
