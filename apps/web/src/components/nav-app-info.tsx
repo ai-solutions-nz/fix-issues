@@ -1,27 +1,55 @@
-import { IconBrandGithub, IconScale, IconWorld } from "@tabler/icons-react";
+import { IconBrandGithub, IconCookie, IconScale, IconWorld } from "@tabler/icons-react";
 import { useRouteContext } from "@tanstack/react-router";
 import { PUBLIC_SITE_URL, PUBLIC_SOURCE_URL } from "@workspace/config/brand-links";
-import { isElmoHosted, LEGAL_DOCUMENTS, legalUrl, showsLegalLinks } from "@workspace/config/legal";
+import { LEGAL_DOCUMENTS, legalUrl, showsLegalLinks } from "@workspace/config/legal";
 import type { ClientConfig } from "@workspace/config/types";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@workspace/ui/components/tooltip";
 import { openCookiePreferences } from "@workspace/ui/lib/cookie-consent";
+import { asksForConsent } from "@/lib/consent-policy";
+
+/**
+ * Online Reset (Packet 2b): its own control, not an item in the legal menu
+ * (hidden until our legal documents exist), so anyone who was asked for
+ * consent can always change or withdraw it.
+ */
+function CookiePreferencesButton({ className }: { className: string }) {
+	return (
+		<Tooltip>
+			<TooltipTrigger
+				render={
+					<button type="button" onClick={openCookiePreferences} className={className} aria-label="Cookie Preferences" />
+				}
+			>
+				<IconCookie className="size-4" />
+			</TooltipTrigger>
+			<TooltipContent>Cookie Preferences</TooltipContent>
+		</Tooltip>
+	);
+}
 
 export function NavAppInfo() {
 	const context = useRouteContext({ strict: false }) as { clientConfig?: ClientConfig };
 	const mode = context.clientConfig?.mode;
-
-	// Whitelabel deployments hide the version/website/github links.
-	if (mode === "whitelabel") return null;
+	const showsCookiePreferences = asksForConsent(mode, context.clientConfig?.analytics);
 
 	const linkClass =
 		"text-muted-foreground hover:text-foreground inline-flex size-7 items-center justify-center rounded-md transition-colors";
+
+	// Whitelabel deployments hide the version/website/github links, but keep the consent control.
+	if (mode === "whitelabel") {
+		if (!showsCookiePreferences) return null;
+		return (
+			<div className="mx-2 mt-1 flex items-center justify-end border-t border-sidebar-border/60 px-1 pt-2">
+				<CookiePreferencesButton className={linkClass} />
+			</div>
+		);
+	}
 
 	// Online Reset: the website and source links appear only once those sites
 	// exist (brand-links.ts); until then the version is plain text.
@@ -63,16 +91,10 @@ export function NavAppInfo() {
 									{document.title}
 								</DropdownMenuItem>
 							))}
-							{/* Only our hosted deployments gate anything on consent, so only they have a choice to revisit. */}
-							{isElmoHosted(mode) && (
-								<>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem onClick={openCookiePreferences}>Cookie Preferences</DropdownMenuItem>
-								</>
-							)}
 						</DropdownMenuContent>
 					</DropdownMenu>
 				)}
+				{showsCookiePreferences && <CookiePreferencesButton className={linkClass} />}
 				{PUBLIC_SOURCE_URL && (
 					<Tooltip>
 						<TooltipTrigger

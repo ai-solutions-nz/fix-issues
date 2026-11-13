@@ -29,6 +29,12 @@ function resolvePosthogKey(): string | undefined {
 	return process.env.VITE_POSTHOG_KEY || undefined;
 }
 
+/** Online Reset: no default host (upstream's proxy is gone); PostHog stays off until this is set. */
+export function resolvePosthogHost(): string | undefined {
+	if (process.env.DISABLE_TELEMETRY) return undefined;
+	return process.env.VITE_POSTHOG_HOST || undefined;
+}
+
 export function resolveCrispWebsiteId(): string | undefined {
 	const mode = getDeploymentModeFromEnv();
 	if (mode !== "cloud" && mode !== "demo") return undefined;
@@ -56,6 +62,7 @@ export const getClientConfig = createServerFn({ method: "GET" }).handler(async (
 			plausibleDomain: process.env.VITE_PLAUSIBLE_DOMAIN,
 			clarityProjectId: process.env.VITE_CLARITY_PROJECT_ID,
 			posthogKey: resolvePosthogKey(),
+			posthogHost: resolvePosthogHost(),
 			crispWebsiteId: resolveCrispWebsiteId(),
 		},
 		defaultDelayHours: getDefaultDelayHours(),

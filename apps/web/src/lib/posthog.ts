@@ -1,8 +1,6 @@
 import { onAnalyticsConsent } from "@workspace/ui/lib/cookie-consent";
 import type { PostHog } from "posthog-js";
 
-const POSTHOG_HOST = "https://var.elmohq.com";
-
 // posthog-js is ~60KB gzipped and sets cookies, so it is imported dynamically
 // and only once analytics consent is in effect. Anyone who declines never
 // downloads it at all.
@@ -26,10 +24,12 @@ function send(call: (posthog: PostHog) => void): void {
 	else if (loading && allowed) queuedEvents.push(call);
 }
 
-function load(apiKey: string): Promise<void> {
+// Online Reset: the API host is a required setting with no default; the
+// upstream project's proxy (var.elmohq.com) is gone.
+function load(apiKey: string, apiHost: string): Promise<void> {
 	loading ??= import("posthog-js").then(({ default: posthog }) => {
 		posthog.init(apiKey, {
-			api_host: POSTHOG_HOST,
+			api_host: apiHost,
 			capture_pageview: true,
 			capture_pageleave: true,
 			autocapture: true,
@@ -71,11 +71,11 @@ function sync(): void {
  * Start analytics if the visitor's consent allows it, and keep following that
  * answer for the rest of the session. Returns an unsubscribe.
  */
-export function initAnalytics(apiKey: string, consentRequired: boolean): () => void {
+export function initAnalytics(apiKey: string, apiHost: string, consentRequired: boolean): () => void {
 	return onAnalyticsConsent(consentRequired, (answer) => {
 		allowed = answer;
 		if (answer) {
-			void load(apiKey).then(sync);
+			void load(apiKey, apiHost).then(sync);
 		} else {
 			queuedEvents.length = 0;
 			sync();

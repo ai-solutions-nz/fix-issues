@@ -1,14 +1,12 @@
 /// <reference types="vite/client" />
 
-// Preloaded so the wordmark font downloads in parallel with the CSS rather than
-// after it. Must resolve to the same emitted asset as the @font-face src.
 import titanOneFont from "@fontsource/titan-one/files/titan-one-latin-400-normal.woff2?url";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts, useLocation } from "@tanstack/react-router";
 import { DEFAULT_APP_ICON, DEFAULT_APP_NAME, ELMO_THEME_COLOR } from "@workspace/config/constants";
 import type { MissingEnvVar } from "@workspace/config/env";
-import { isElmoHosted, legalUrl } from "@workspace/config/legal";
+import { legalUrl } from "@workspace/config/legal";
 import type { DeploymentMode } from "@workspace/config/types";
 import { CookieConsentBanner } from "@workspace/ui/consent/cookie-consent-banner";
 import { initAdTags, trackAdPageView } from "@workspace/ui/lib/ad-tags";
@@ -20,6 +18,9 @@ import { NotFoundPage } from "@/components/not-found-page";
 import queryDevtools from "@/integrations/tanstack-query/devtools";
 import { initClarity } from "@/lib/clarity";
 import { rootConfigQuery } from "@/lib/config/queries";
+// Preloaded so the wordmark font downloads in parallel with the CSS rather than
+// after it. Must resolve to the same emitted asset as the @font-face src.
+import { asksForConsent as asksForCookieConsent, consentRequiredFor } from "@/lib/consent-policy";
 import { initCrisp } from "@/lib/crisp";
 import { initAnalytics } from "@/lib/posthog";
 import type { PublicClientConfig } from "@/server/config";
@@ -149,25 +150,27 @@ function RootComponent() {
 	const { envValidation, clientConfig, consentRegion } = Route.useRouteContext();
 	const clarityProjectId = clientConfig?.analytics?.clarityProjectId;
 	const posthogKey = clientConfig?.analytics?.posthogKey;
+	const posthogHost = clientConfig?.analytics?.posthogHost;
 	const mode = clientConfig?.mode;
-	const asksForConsent = isElmoHosted(mode);
+	// Online Reset (Packet 2b): local and whitelabel ask too once analytics is configured.
+	const asksForConsent = asksForCookieConsent(mode, clientConfig?.analytics);
 	// Null until the browser resolves it — the time-zone fallback would read the
 	// server's own zone during SSR.
 	const [consentRequired, setConsentRequired] = useState<boolean | null>(null);
 
 	useEffect(() => {
-		const required = asksForConsent ? isConsentRequired(consentRegion ?? null) : false;
+		const required = asksForConsent ? consentRequiredFor(mode, () => isConsentRequired(consentRegion ?? null)) : false;
 		if (asksForConsent) setConsentRequired(required);
 
 		const stops = [
-			posthogKey ? initAnalytics(posthogKey, required) : undefined,
+			posthogKey && posthogHost ? initAnalytics(posthogKey, posthogHost, required) : undefined,
 			clarityProjectId ? initClarity(clarityProjectId, required) : undefined,
 			asksForConsent ? initAdTags(required) : undefined,
 		];
 		return () => {
 			for (const stop of stops) stop?.();
 		};
-	}, [posthogKey, clarityProjectId, asksForConsent, consentRegion]);
+	}, [posthogKey, posthogHost, clarityProjectId, asksForConsent, consentRegion, mode]);
 
 	const pathname = useLocation({ select: (location) => location.pathname });
 	useEffect(() => {

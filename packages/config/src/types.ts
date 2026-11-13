@@ -28,6 +28,8 @@ export interface AnalyticsConfig {
 	plausibleDomain?: string;
 	clarityProjectId?: string;
 	posthogKey?: string;
+	/** PostHog API host. Required with posthogKey; there is no default, so analytics stays off without it. */
+	posthogHost?: string;
 	/** Only set on deployments we operate (cloud and demo). */
 	crispWebsiteId?: string;
 }

@@ -384,7 +384,15 @@ export const ENV_REGISTRY: EnvVarSpec[] = [
 		name: "VITE_POSTHOG_KEY",
 		scope: "client",
 		requiredBy: "optional",
-		description: "PostHog project API key override.",
+		description:
+			"PostHog project API key. Analytics runs only with VITE_POSTHOG_HOST set as well, and only after consent.",
+	},
+	{
+		name: "VITE_POSTHOG_HOST",
+		scope: "client",
+		requiredBy: "optional",
+		description:
+			"PostHog API host (e.g. https://eu.i.posthog.com or your own proxy). Required with VITE_POSTHOG_KEY; there is no default, so analytics stays off without it.",
 	},
 	{
 		name: "VITE_CHART_COLORS",
