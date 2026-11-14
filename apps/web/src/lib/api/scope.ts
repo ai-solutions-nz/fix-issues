@@ -94,7 +94,7 @@ export function requireOrganizationInScope(auth: Principal, organizationId: stri
 }
 
 /**
- * Online Reset (Packet 1c): billing is the agency's business. A key limited to
+ * AI Solutions NZ (Packet 1c): billing is the agency's business. A key limited to
  * particular brands, or a user who is a client in this organization, is
  * refused even though the organization is otherwise in reach.
  */

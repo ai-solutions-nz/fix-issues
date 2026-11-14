@@ -74,7 +74,7 @@ function organizationGroups(
 		{ title: "MCP", link: { to: "/app/org/$org/settings/mcp", params }, icon: IconPlugConnected },
 	];
 
-	// Online Reset: shown once a published skill exists (brand-links.ts); never in whitelabel.
+	// AI Solutions NZ: shown once a published skill exists (brand-links.ts); never in whitelabel.
 	if (mode !== "whitelabel" && PUBLIC_SKILL_REPO) {
 		docs.push({ title: "Skill", link: { to: "/app/org/$org/settings/skill", params }, icon: IconSchool });
 	}
@@ -89,7 +89,7 @@ function brandGroups(organization: OrganizationSummary, brand: BrandWithPrompts)
 	const params = brandLinkParams(organization, brand);
 	const dashboard: NavItem[] = [
 		{ title: "Overview", link: { to: "/app/org/$org/brand/$brand", params }, icon: IconDashboard, exact: true },
-		{ title: "AI Performance", link: { to: "/app/org/$org/brand/$brand/online-reset", params }, icon: IconTarget },
+		{ title: "AI Performance", link: { to: "/app/org/$org/brand/$brand/ai-visibility", params }, icon: IconTarget },
 	];
 
 	if (brand.onboarded) {

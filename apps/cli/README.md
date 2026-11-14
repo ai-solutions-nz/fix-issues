@@ -1,12 +1,12 @@
-# Online Reset CLI
+# AI Visibility CLI (AI Solutions NZ)
 
-The command-line tool for running Online Reset on your own infrastructure. It generates a Docker Compose stack, manages secrets and configuration, and gives you one command to start, stop and upgrade it.
+The command-line tool for running AI Visibility on your own infrastructure. It generates a Docker Compose stack, manages secrets and configuration, and gives you one command to start, stop and upgrade it.
 
-Online Reset is built on the open-source Elmo project (MIT); see `UPSTREAM.md` and `THIRD_PARTY_NOTICES.md` at the repository root.
+AI Visibility is built on the open-source Elmo project (MIT); see `UPSTREAM.md` and `THIRD_PARTY_NOTICES.md` at the repository root.
 
 ## Install
 
-The Online Reset CLI is not published to a package registry. Build it from this repository:
+The AI Visibility CLI is not published to a package registry. Build it from this repository:
 
 ```bash
 pnpm install
@@ -27,12 +27,12 @@ elmo compose up -d
 
 ## Commands
 
-| Command                    | Description                                                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `elmo init`                | Interactive wizard to set up a local Online Reset instance                                                                                  |
-| `elmo compose <args...>`   | Run any `docker compose` command against your Online Reset project (e.g. `elmo compose up -d`, `elmo compose down`, `elmo compose logs -f`) |
-| `elmo edit <env\|compose>` | Change API keys, scrape targets, or the Docker Compose YAML                                                                                 |
-| `elmo upgrade`             | Move your deployment to this CLI's version: runs migrations, re-pins image tags, and restarts the stack                                     |
+| Command                    | Description                                                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `elmo init`                | Interactive wizard to set up a local AI Visibility instance                                                                                  |
+| `elmo compose <args...>`   | Run any `docker compose` command against your AI Visibility project (e.g. `elmo compose up -d`, `elmo compose down`, `elmo compose logs -f`) |
+| `elmo edit <env\|compose>` | Change API keys, scrape targets, or the Docker Compose YAML                                                                                  |
+| `elmo upgrade`             | Move your deployment to this CLI's version: runs migrations, re-pins image tags, and restarts the stack                                      |
 
 Run `elmo --help` or `elmo <command> --help` for the full list of flags.
 
@@ -43,4 +43,4 @@ Run `elmo --help` or `elmo <command> --help` for the full list of flags.
 
 ## Telemetry
 
-Online Reset sends no telemetry. The upstream CLI's event and newsletter calls have been removed; `DISABLE_TELEMETRY` is still accepted but has nothing to switch off.
+AI Visibility sends no telemetry. The upstream CLI's event and newsletter calls have been removed; `DISABLE_TELEMETRY` is still accepted but has nothing to switch off.

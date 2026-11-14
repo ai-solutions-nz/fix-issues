@@ -1,5 +1,5 @@
 /**
- * Online Reset (Packet 1b): the tenant transaction handle closes with its
+ * AI Solutions NZ (Packet 1b): the tenant transaction handle closes with its
  * transaction, ids that would corrupt the comma-separated settings are refused,
  * and migration 0040 narrows what restricted and non-admin callers may do.
  */

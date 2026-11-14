@@ -1,4 +1,4 @@
-# Online Reset: Build Status
+# AI Solutions NZ — AI Visibility (SEO, AEO & GEO): Build Status
 
 _Last updated: 2026-11-12. Current milestone: **5 (reporting and platform QA)**. A first pass of every milestone is implemented, but some items remain open; see "Missing functionality"._
 
@@ -6,19 +6,19 @@ _Last updated: 2026-11-12. Current milestone: **5 (reporting and platform QA)**.
 
 ```bash
 pnpm install
-pnpm test                                    # 2,035 unit tests (8 packages)
+pnpm test                                    # 2,045 unit tests (8 packages)
 # Integration tests run as a non-superuser login (see "Database login for tenant isolation");
 # TEST_ADMIN_DATABASE_URL=postgres://postgres:postgres@localhost:5432/elmo_test also runs the role-check tests that create logins
 TEST_DATABASE_URL=postgres://or_app:or_app@localhost:5432/elmo_test \
   pnpm -C packages/lib test:integration      # 87 Postgres tests
 # same for apps/worker (34) and apps/web (174)
-pnpm lint                                    # Biome, 897 files, 0 errors
+pnpm lint                                    # Biome, 898 files, 0 errors
 DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Christchurch demo
 ```
 
 ## Repository
 
-- **Location:** branch `online-reset-platform` of `ai-solutions-nz/fix-issues` (https://github.com/ai-solutions-nz/fix-issues/tree/online-reset-platform). All Online Reset work is committed and pushed there. `main` and the research branch `ccr-0af30c39-oq25zx` are separate and untouched.
+- **Location:** branch `online-reset-platform` of `ai-solutions-nz/fix-issues` (https://github.com/ai-solutions-nz/fix-issues/tree/online-reset-platform). All AI Visibility work is committed and pushed there. `main` and the research branch `ccr-0af30c39-oq25zx` are separate and untouched.
 - **History:** the branch keeps Elmo's history. Locally, `upstream` points at `elmohq/elmo`, and the fork base is `db2d52b`.
 - **Not done:** a dedicated `ai-solutions-nz/online-reset-platform` repository was not created, because this session cannot create repositories. Moving the branch there later is a plain push.
 
@@ -49,7 +49,7 @@ DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Chr
 | M4 CMS adapters | WordPress REST with Application Passwords (adapted from Canonry), Shopify Admin GraphQL. | WordPress: integration suite (mock server). Shopify: `shopify.test.ts` (mock only). |
 | **M5 Dashboard** | "AI Performance" page with five tabs: AI Visibility (KPIs, by engine, brand vs competitors, question coverage, cited sources, weekly history), Audit, Opportunities, Content and Approvals (queue, editor with QA results, publish, history with measured change, rollback), Report. An evidence dialog shows the stored answer with highlighted mentions, method, model, location and run id. Simulated data carries banners. | Browser tour with Playwright (`scripts/or/ui-smoke.cjs`), 0 page errors; screenshots in `docs/demo/screenshots/`. |
 | M5 Reports | Self-contained HTML client report: per method, with sample sizes and run ids, audit findings, prioritised opportunities and measured changes. | `docs/demo/christchurch-demo-report-SIMULATED.html`. |
-| M5 Rebrand (partial) | Default app name "Online Reset", logo wordmark, auth side panel (Elmo testimonial and cloud upsell removed), page titles. | `route-head.test.ts`. |
+| M5 Rebrand (partial) | Default app name (now "AI Solutions NZ", Packet 4), logo wordmark, auth side panel (Elmo testimonial and cloud upsell removed), page titles. | `route-head.test.ts`. |
 
 ## Christchurch demonstration (Step 8)
 
@@ -110,11 +110,11 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 
 ## Tests performed (latest run, all passing)
 
-- **Unit:** 2,035 (plus 192 Storybook tests).
-  - or-core 72, lib 830, web 767, config 158, cli 89, deployment 66, site-audit 38, worker 15.
+- **Unit:** 2,045 (plus 192 Storybook tests).
+  - or-core 72, lib 830, web 777, config 158, cli 89, deployment 66, site-audit 38, worker 15.
 - **Integration (Postgres 16):** 295, run as the non-superuser `or_app` login (member of `or_tenant` only, owner of the test database).
   - lib 87, worker 34, web 174. Web includes the strict 90-test isolation suite and 19 signed-in tests.
-- **Lint:** Biome over 897 files, 0 errors.
+- **Lint:** Biome over 898 files, 0 errors.
 - **Type checks:** all packages, including the NodeNext worker.
 - **Production build:** `vite build` succeeded.
 - **Browser smoke test** (local dev server) covered:
@@ -129,7 +129,7 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 ## Known bugs and limitations
 
 - **Where database tenant scope does not apply.** Requests with no session always run in an empty scope (no tenant rows); the signed-out allowlist is empty. Instance administrators (a user with the `admin` role, or an instance admin API key) and of the background worker, which is system work. Server functions are covered by the global middleware; the isolation suite verifies that registration and the scope it applies, but it calls the REST routes and MCP tools individually, not each of the ~118 server functions. Those functions use the same core query modules the REST routes and MCP tools exercise.
-- **Branding (Packet 2).** User-visible Elmo references are replaced with Online Reset, and nothing links to the upstream project's sites. `rg -i "elmo" apps packages docs` (licence files, `UPSTREAM.md`, `THIRD_PARTY_NOTICES.md`, `node_modules` and build output excluded) went from **848 lines in 160 files to 675 lines in 130 files**.
+- **Branding (Packet 2).** User-visible Elmo references are replaced with our own product name (AI Solutions NZ since Packet 4), and nothing links to the upstream project's sites. `rg -i "elmo" apps packages docs` (licence files, `UPSTREAM.md`, `THIRD_PARTY_NOTICES.md`, `node_modules` and build output excluded) went from **848 lines in 160 files to 675 lines in 130 files**.
   - **Changed:**
     - email templates;
     - sign-in, MCP consent and report pages;
@@ -137,7 +137,7 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
     - the cookie banner and the OG image wordmark;
     - the MCP server name and instructions;
     - the OpenAPI title, contact and licence, and its changelog and docs links;
-    - the site-audit crawler, now `OnlineResetBot/1.0` with no URL;
+    - the site-audit crawler, now `AISolutionsNZBot/1.0` (renamed in Packet 4) with no URL;
     - the OpenRouter `X-Title`, with no upstream referer;
     - Stripe product names in the bootstrap script;
     - CLI prose, banner and README.
@@ -175,11 +175,33 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
   - **Ad tags:** upstream's Google Ads id, Meta Pixel id, conversion labels and production hosts are removed (`packages/ui/src/lib/ad-tags.ts`), so no ad tag loads anywhere.
   - **Tests:** positive tests run against a mocked `brand-links`, covering link paths, legal-menu modes, demo chat links and the promotion flag. They sit beside the empty-state tests. There are also new tests for the consent rule and the CSP source.
 - **Consent and CSP follow-ups (Packet 2c, Neo's review of `2bd5727`).**
-  - **Banner text:** the cookie banner names the deployment's own brand (whitelabel shows its operator's name, not "Online Reset"). It mentions advertising cookies, and offers the Advertising switch, only when an ad id is set. "Accept" grants only what was offered, so a later ad tag can't ride on an earlier answer.
+  - **Banner text:** the cookie banner names the deployment's own brand (whitelabel shows its operator's name, not the default brand). It mentions advertising cookies, and offers the Advertising switch, only when an ad id is set. "Accept" grants only what was offered, so a later ad tag can't ride on an earlier answer.
   - **CSP:** the policy names a third party only when it is configured. Google's hosts appear only with a Google Ads id, Meta's only with a Meta Pixel id, and Clarity's only with Clarity enabled. With nothing configured, `script-src` is `'self' 'unsafe-inline' https://challenges.cloudflare.com`, with no googletagmanager.com or google.com (a known CSP bypass). The builder is in `apps/web/src/lib/csp.ts`.
   - **PostHog host:** the CSP source must be an `https:` URL; anything else is dropped.
   - **DISABLE_TELEMETRY** now switches Clarity off too, as it already did PostHog (`apps/web/src/server/clarity.ts`).
   - **Stories:** `cookie-consent.stories.tsx` covers the banner without a policy link (F1), the whitelabel footer with and without analytics (F2), and the hosted footer.
+- **Product rename (Packet 4, owner decision).** The product is **AI Solutions NZ**, with the product line **AI Visibility (SEO, AEO & GEO)**. The working name is gone from everything user-facing.
+  - **App:** `DEFAULT_APP_NAME` is "AI Solutions NZ" and the new `PRODUCT_LINE` constant is "AI Visibility (SEO, AEO & GEO)". These set the page `<title>`/meta (`AI Solutions NZ - AI Visibility (SEO, AEO & GEO)`), nav, report headers, the OG wordmark, and the cookie banner and sign-in/consent pages through the app name.
+  - **Route URL:** the brand's AI Visibility page moved from `/app/org/$org/brand/$brand/online-reset` to `.../ai-visibility`. Old bookmarks to that page now 404 (pre-launch, so no redirect was added).
+  - **Emails and reports:** email templates and the client report fallback say "AI Solutions NZ".
+  - **API, MCP and demo chat:** the OpenAPI title is "AI Visibility API (AI Solutions NZ)". The MCP server is now `ai-visibility` / "AI Solutions NZ AI Visibility", so existing MCP client configs keep working (clients key servers by URL). The demo chat copy, OpenRouter `X-Title` and Stripe product names all use the new name.
+  - **Crawler:** the site-audit user agent is `AISolutionsNZBot/1.0`, and the 404 probe path is `/ai-visibility-audit-…`.
+  - **CLI:** banner, prose and report titles use "AI Visibility", and `elmo init` writes `APP_NAME="AI Solutions NZ"`.
+  - **Docs:** `README.md`, `AGENTS.md`, `THIRD_PARTY_NOTICES.md` (our name only; the Elmo licence notices are untouched), `apps/cli/README.md` and `.env.example`. The code comments that marked our changes now say "AI Solutions NZ".
+  - **Count:** `rg "OnlineReset|Online Reset"` (excluding `node_modules`, build output, `.git`) went from **274 lines in 146 files** to **45 lines in 21 files**. The lines that remain are the dated research docs (renamed note added at the top of `docs/research/README.md`), comments in applied migrations, and this file's own notes.
+  - **Kept on purpose** (internal identifiers; renaming would be risky, or would change no user-visible text):
+    - **Branch and repo:** the git branch `online-reset-platform` (now the repository's default branch; CI triggers, clones and links use it) and the root `package.json` name `online-reset-platform`.
+    - **Database:** the roles `or_tenant` and `or_app`; every `or_`-prefixed table, function and setting (`or_*` tables, `or_current_orgs()`, `or.org_ids`, …); and the migration files `00xx_or_*.sql`. Applied migrations are not edited, so their comments still carry the working name.
+    - **Code and package names:** `@workspace/or-core` (`packages/or-core`), `packages/lib/src/or/`, `scripts/or/`, `apps/web/src/server/online-reset.ts` (a server-function module path), `apps/worker/src/or-jobs.ts`.
+    - **Stored job names:** the pg-boss queues `or-audit-sweep` and `or-brand-audit`. Existing schedules reference these names.
+    - **Env vars:** no environment variable used the working name. The `ELMO_*` and `VITE_*` names stay as listed under Packet 2, as do the other Elmo identifiers listed there (CLI binary `elmo`, `elmo_` key prefix, `elmo.cookie-consent` storage key, …).
+    - **Research:** `docs/research/` keeps "Online Reset" as the dated record of the 2026-11-07 research.
+- **Consent follow-ups (Packet 4, Neo's P2c catch).**
+  - **Consent masking:** every banner button, "Save choices" included, now stores only the categories that were offered (`maskToOffered` in `packages/ui/src/lib/cookie-consent.ts`). Advertising is recorded as refused whenever it wasn't shown.
+  - **Consent version:** `CONSENT_VERSION` is now 2, so answers saved before masking are asked again.
+  - **Sentry CSP:** `*.sentry.io` is allowed in `connect-src` only when `VITE_SENTRY_DSN` is set.
+  - **PostHog host:** `resolvePosthogHost` refuses any non-https host.
+  - **Tests:** `apps/web/src/lib/__tests__/cookie-consent.test.ts` adds 3 tests (masking when not offered, masking when offered, version-1 answers asked again). The CSP and config suites add tests for the Sentry and https rules.
 - **"Publish" uses the brand's first CMS connection.** There is no UI to add or manage CMS connections, edit the brand profile, invite client users or grant them brands. These are currently set up through the service functions or the demo script.
 - **The demo's mock WordPress stops when the demo exits.** Publishing from the UI afterwards fails, and the failure is recorded as `failed`, until a real or mock CMS is connected.
 - **Embeddings are lexical, not semantic.** Question clustering uses a free, deterministic hash embedding stored as `real[]`; pgvector and model embeddings are not wired. As a result, paraphrases that share no words are not merged.

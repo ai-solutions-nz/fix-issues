@@ -9,14 +9,14 @@ export interface ScrapeResult {
 	rawOutput: unknown;
 	webQueries: string[];
 	modelVersion?: string;
-	/** Online Reset: how the requested location reached the engine. Omitted means "none". */
+	/** AI Solutions NZ: how the requested location reached the engine. Omitted means "none". */
 	locationApplied?: LocationApplied;
 }
 
 export interface ProviderOptions {
 	webSearch?: boolean;
 	version?: string;
-	/** Online Reset: where the buyer is asking from. */
+	/** AI Solutions NZ: where the buyer is asking from. */
 	location?: GeoTarget;
 }
 

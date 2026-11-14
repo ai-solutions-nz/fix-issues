@@ -108,7 +108,7 @@ export async function getOrgBillingStates(
 	const now = options?.now ?? new Date();
 
 	const [subscriptionRows, settingsRows] = await Promise.all([
-		// Online Reset: a client-role user may not read subscription rows (migration
+		// AI Solutions NZ: a client-role user may not read subscription rows (migration
 		// 0040), but their organization's plan still decides what they can use, so
 		// the plan is worked out on the system handle unless a caller passes one.
 		(options?.conn ?? serviceDb).select().from(subscription).where(inArray(subscription.referenceId, orgIds)),

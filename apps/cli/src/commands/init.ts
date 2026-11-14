@@ -29,7 +29,7 @@ export type InitOptions = {
 	dockerDir?: string;
 };
 
-const DEFAULT_APP_NAME = "Online Reset";
+const DEFAULT_APP_NAME = "AI Solutions NZ";
 const DEFAULT_APP_ICON = "/icons/elmo-icon.svg";
 const DEFAULT_APP_PORT = 1515;
 const LOCAL_DATABASE_URL = "postgres://postgres:postgres@postgres:5432/elmo";
@@ -47,7 +47,7 @@ async function confirmEnvOverwrite(configDir: string): Promise<string | undefine
 
 	p.log.warn(
 		isElmoEnv
-			? `An existing Online Reset config was found at ${configDir}.`
+			? `An existing AI Visibility config was found at ${configDir}.`
 			: `A .env file already exists in ${configDir} and was NOT created by this CLI.`,
 	);
 	const overwrite = await p.confirm({
@@ -127,8 +127,8 @@ function toPublicUrl(value: string): URL | undefined {
 function validatePublicUrl(value: string | undefined): string | undefined {
 	if (!value) return "Required";
 	const url = toPublicUrl(value.trim());
-	if (!url?.hostname.includes(".")) return "Enter a domain, e.g. reset.example.com";
-	// Auth trusts only this origin, so Online Reset can't be served from a subpath.
+	if (!url?.hostname.includes(".")) return "Enter a domain, e.g. visibility.example.com";
+	// Auth trusts only this origin, so AI Solutions NZ can't be served from a subpath.
 	if (url.pathname !== "/") return "Must not include a path";
 	return undefined;
 }
@@ -136,7 +136,7 @@ function validatePublicUrl(value: string | undefined): string | undefined {
 async function configureProvidersInteractive(env: EnvMap): Promise<"recommended" | "custom"> {
 	p.note(
 		[
-			"Online Reset needs two kinds of providers:",
+			"AI Visibility needs two kinds of providers:",
 			"",
 			pc.bold("1. A scraper") + " — to track ChatGPT and Google AI Mode (no public APIs):",
 			`     • ${pc.cyan("Cloro")}      — most reliable, every surface, ~$0.65/mo per prompt ($30/mo min)`,
@@ -151,7 +151,7 @@ async function configureProvidersInteractive(env: EnvMap): Promise<"recommended"
 			`     • ${pc.cyan("OpenRouter")} — one key, all major models (recommended)`,
 			`     • ${pc.cyan("Anthropic / OpenAI / Mistral")} — direct provider keys`,
 			"",
-			"Pricing assumes Online Reset's default cadence (5 runs/day × 2 surfaces).",
+			"Pricing assumes AI Visibility's default cadence (5 runs/day × 2 surfaces).",
 		].join("\n"),
 		"AI providers",
 	);
@@ -277,7 +277,7 @@ async function doStart(configDir: string): Promise<void> {
 async function askTelemetryConsent(env: EnvMap): Promise<void> {
 	p.note(
 		[
-			"Online Reset is open source and maintained by a small team. Telemetry",
+			"AI Visibility is open source and maintained by a small team. Telemetry",
 			"from both the CLI and your local deployment (web + worker)",
 			"tells us things like which CLI versions are still in use, where",
 			"`elmo init` drops off, which providers people pick, and whether",
@@ -311,7 +311,7 @@ async function askTelemetryConsent(env: EnvMap): Promise<void> {
 
 async function askAccess(): Promise<{ publicUrl: URL | undefined; port: number }> {
 	const access = await p.select({
-		message: "How will you access Online Reset?",
+		message: "How will you access AI Visibility?",
 		options: [
 			{ value: "local" as const, label: "On this machine (localhost)" },
 			{ value: "public" as const, label: "From a domain (e.g. behind a reverse proxy)" },
@@ -324,7 +324,7 @@ async function askAccess(): Promise<{ publicUrl: URL | undefined; port: number }
 	if (access === "public") {
 		const domain = await p.text({
 			message: "Domain",
-			placeholder: "reset.example.com",
+			placeholder: "visibility.example.com",
 			validate: validatePublicUrl,
 		});
 		assertNotCancelled(domain);
@@ -344,9 +344,9 @@ async function askAccess(): Promise<{ publicUrl: URL | undefined; port: number }
 
 export async function runInit(options: InitOptions, version: string): Promise<void> {
 	printBanner();
-	p.intro(pc.bold("Setting up Online Reset"));
+	p.intro(pc.bold("Setting up AI Visibility"));
 
-	// Online Reset: the upstream "prefer not to self-host?" note advertised its own hosted plan; removed.
+	// AI Solutions NZ: the upstream "prefer not to self-host?" note advertised its own hosted plan; removed.
 
 	assertDockerRunning();
 

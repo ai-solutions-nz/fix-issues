@@ -38,7 +38,7 @@ function desiredCatalog(): DesiredPrice[] {
 		for (const [interval, usd, stripeInterval] of entries) {
 			prices.push({
 				lookupKey: stripePlanLookupKey(key, interval),
-				productName: `Online Reset ${plan.name}`,
+				productName: `AI Solutions NZ AI Visibility ${plan.name}`,
 				productKey: key,
 				unitAmountUsd: usd,
 				interval: stripeInterval,
@@ -47,14 +47,14 @@ function desiredCatalog(): DesiredPrice[] {
 	}
 	prices.push({
 		lookupKey: PREMIUM_ADDON_LOOKUP_KEYS.monthly,
-		productName: "Online Reset Extra Premium Prompts",
+		productName: "AI Solutions NZ AI Visibility Extra Premium Prompts",
 		productKey: "premium-addon",
 		unitAmountUsd: PREMIUM_ADDON_MONTHLY_USD,
 		interval: "month",
 	});
 	prices.push({
 		lookupKey: PREMIUM_ADDON_LOOKUP_KEYS.annual,
-		productName: "Online Reset Extra Premium Prompts",
+		productName: "AI Solutions NZ AI Visibility Extra Premium Prompts",
 		productKey: "premium-addon",
 		unitAmountUsd: PREMIUM_ADDON_ANNUAL_USD,
 		interval: "year",

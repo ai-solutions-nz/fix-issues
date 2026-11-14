@@ -1,5 +1,5 @@
 /**
- * Online Reset (Packet 2b): when a visitor is asked for cookie consent.
+ * AI Solutions NZ (Packet 2b): when a visitor is asked for cookie consent.
  *
  * Our hosted deployments (cloud, demo) ask as before, by region. Local and
  * whitelabel deployments now ask too whenever an analytics tool is

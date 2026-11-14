@@ -42,7 +42,7 @@ function ApiSettingsPage() {
 				<CopyField value={baseUrl} label="Base URL" />
 			</div>
 
-			{/* Online Reset: the typed SDKs are the upstream project's packages, so they are not advertised. */}
+			{/* AI Solutions NZ: the typed SDKs are the upstream project's packages, so they are not advertised. */}
 
 			<Card className="overflow-hidden p-0">
 				<ApiReferenceEmbed />

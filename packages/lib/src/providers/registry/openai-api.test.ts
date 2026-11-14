@@ -176,7 +176,7 @@ describe("openai-api web queries", () => {
 	});
 });
 
-describe("Online Reset location targeting", () => {
+describe("NZ location targeting", () => {
 	const christchurch = { country: "NZ", region: "Canterbury", city: "Christchurch", timezone: "Pacific/Auckland" };
 
 	it("sends the buyer's city as the web search user_location", async () => {

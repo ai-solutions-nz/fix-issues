@@ -136,7 +136,7 @@ export const promptRuns = pgTable(
 		 */
 		webQueries: text("web_queries").array().notNull().default([]),
 		/**
-		 * Online Reset evidence: how the answer was collected. Metrics never mix
+		 * AI Solutions NZ evidence: how the answer was collected. Metrics never mix
 		 * methods (see packages/or-core/src/measurement.ts). "unknown" marks runs
 		 * stored before the column existed.
 		 */
@@ -145,7 +145,7 @@ export const promptRuns = pgTable(
 		locationRequested: jsonb("location_requested").$type<{ country: string; region?: string; city?: string } | null>(),
 		/** How the provider honoured it: "native" (API parameter), "prompt_text", or "none". */
 		locationApplied: text("location_applied"),
-		/** Online Reset measurement-rules version the run was collected under. */
+		/** AI Solutions NZ measurement-rules version the run was collected under. */
 		methodologyVersion: text("methodology_version"),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},

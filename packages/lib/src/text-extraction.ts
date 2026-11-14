@@ -615,7 +615,7 @@ const DATAFORSEO: Extractor = { text: extractTextFromDataforseo, citations: extr
 /** By provider (how the data was fetched), or by engine for runs that don't name one. */
 const EXTRACTORS: Record<string, Extractor> = {
 	"openai-api": OPENAI,
-	// Online Reset fixtures are stored in the OpenAI Responses shape.
+	// AI Solutions NZ fixtures are stored in the OpenAI Responses shape.
 	fixture: OPENAI,
 	openai: OPENAI,
 	chatgpt: OPENAI,

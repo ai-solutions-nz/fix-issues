@@ -1,5 +1,5 @@
 /**
- * Online Reset: runs every server function inside a tenant transaction (see
+ * AI Solutions NZ: runs every server function inside a tenant transaction (see
  * `@/lib/auth/tenant-scope`). A signed-in user gets their own scope. A request
  * without a session gets an empty scope, in which row-level security shows no
  * tenant row at all, unless the function is on the allowlist below (empty).

@@ -82,7 +82,7 @@ ${r.simulated ? '<p class="sim">SIMULATED DATA — these figures come from fixtu
 	return `<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><title>${esc(d.brand.name)} — AI visibility report</title>
 <style>body{font-family:system-ui,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem;color:#1a1a1a}table{border-collapse:collapse;width:100%;margin:.5rem 0 1rem}th,td{border:1px solid #ddd;padding:.35rem .5rem;text-align:left;font-size:.9rem;vertical-align:top}.sim{background:#fff3cd;border:2px solid #d39e00;padding:.75rem;font-weight:700}.ids{font-family:monospace;font-size:.7rem;color:#666}.note{color:#555}</style></head>
 <body><h1>${esc(d.brand.name)} — AI visibility report</h1>
-<p>Prepared by ${esc(options.agencyName ?? "Online Reset")} on ${esc(d.generatedAt.slice(0, 10))}. Results from different collection methods are reported separately and never combined.</p>
+<p>Prepared by ${esc(options.agencyName ?? "AI Solutions NZ")} on ${esc(d.generatedAt.slice(0, 10))}. Results from different collection methods are reported separately and never combined.</p>
 ${sections.join("\n") || "<p>No AI answers collected yet.</p>"}
 ${audit}
 ${opps}

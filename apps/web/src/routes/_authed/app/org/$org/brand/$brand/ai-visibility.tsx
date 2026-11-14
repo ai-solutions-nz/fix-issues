@@ -28,10 +28,10 @@ import {
 	startContentFn,
 } from "@/server/online-reset";
 
-export const Route = createFileRoute("/_authed/app/org/$org/brand/$brand/online-reset")({
+export const Route = createFileRoute("/_authed/app/org/$org/brand/$brand/ai-visibility")({
 	staticData: { crumb: "AI Performance" },
 	head: pageHead({ description: "Evidence-backed AI visibility, audits, opportunities and approvals." }),
-	component: OnlineResetPage,
+	component: AiVisibilityPage,
 });
 
 // Server functions serialise to JSON; dates arrive as ISO strings, which every use below tolerates.
@@ -53,7 +53,7 @@ function useDashboard(brandId: string) {
 	});
 }
 
-function OnlineResetPage() {
+function AiVisibilityPage() {
 	const brandId = useBrandId();
 	const { data, isLoading, error } = useDashboard(brandId);
 	const [evidenceRun, setEvidenceRun] = useState<string | null>(null);

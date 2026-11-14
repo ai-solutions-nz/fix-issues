@@ -1,6 +1,6 @@
 // Adapted from Canonry packages/intelligence/src/share-of-voice-frame.ts at
 // f5d4612e23d2b1f0e5f46b217245359125c52a80. Copyright (c) 2026 Arber X and
-// contributors, MIT (see THIRD_PARTY_NOTICES.md). Modified for Online Reset.
+// contributors, MIT (see THIRD_PARTY_NOTICES.md). Modified for AI Solutions NZ.
 import { percentOf } from "./measurement";
 
 /**

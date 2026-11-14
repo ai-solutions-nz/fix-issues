@@ -496,7 +496,7 @@ export const SelfHostedSuggestsMorePlatforms: Story = {
 		// Claude has no scraper and Copilot has no API, so each shows a gap.
 		await expect((await canvas.findAllByText("—")).length).toBe(2);
 
-		// Online Reset: no public setup guide yet (brand-links.ts), so provider
+		// AI Solutions NZ: no public setup guide yet (brand-links.ts), so provider
 		// names are plain text and the guide button is absent.
 		await expect(await canvas.findByText("Anthropic")).toBeVisible();
 		await expect(canvas.queryByRole("link", { name: "Anthropic" })).toBeNull();

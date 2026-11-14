@@ -1,5 +1,5 @@
 /**
- * Online Reset audits over pages already fetched and parsed by the Elmo
+ * AI Solutions NZ audits over pages already fetched and parsed by the Elmo
  * site-audit crawler. Pure functions: the same pages and profile always give
  * the same findings, and every finding names the pages it rests on.
  */

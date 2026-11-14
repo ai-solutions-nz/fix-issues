@@ -50,7 +50,7 @@ type CompetitorInput = z.infer<typeof competitorInputSchema>;
 type PromptInput = z.infer<typeof promptInputSchema>;
 
 /**
- * Online Reset: organization and brand ids end up in comma-separated tenant
+ * AI Solutions NZ: organization and brand ids end up in comma-separated tenant
  * settings, so they must be one plain token: letters, digits, `-` and `_`.
  */
 const tenantIdSchema = z

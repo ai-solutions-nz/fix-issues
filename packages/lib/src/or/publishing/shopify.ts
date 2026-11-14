@@ -1,4 +1,4 @@
-// Shopify Admin GraphQL page publishing. Written for Online Reset; not yet
+// Shopify Admin GraphQL page publishing. Written for AI Solutions NZ; not yet
 // exercised against a live Shopify store (tested against a local mock only).
 import {
 	type PublishablePage,

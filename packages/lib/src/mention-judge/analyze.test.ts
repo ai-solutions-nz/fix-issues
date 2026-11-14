@@ -163,7 +163,7 @@ describe("createMentionAnalyzer", () => {
 	const noOpenRouter = () => undefined;
 	const openRouter = () => "or-key";
 
-	it("falls back to the deterministic matcher without a key (Online Reset)", () => {
+	it("falls back to the deterministic matcher without a key", () => {
 		expect(createMentionAnalyzer("", noOpenRouter).judgeVersion).toBe("or-deterministic-1");
 		expect(createMentionAnalyzer("", () => "  ").judgeVersion).toBe("or-deterministic-1");
 		expect(createMentionAnalyzer("deterministic", openRouter).judgeVersion).toBe("or-deterministic-1");

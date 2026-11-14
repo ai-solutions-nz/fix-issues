@@ -1,5 +1,5 @@
 /**
- * Online Reset (Packet 1b): signed-in actions run exactly as the server would
+ * AI Solutions NZ (Packet 1b): signed-in actions run exactly as the server would
  * run them, inside the tenant scope the global middleware builds for a real
  * user (`runServerFnInTenant`), with nothing about the scope mocked. Covers the
  * client role over MCP, the four actions the tenant scope had broken, and the

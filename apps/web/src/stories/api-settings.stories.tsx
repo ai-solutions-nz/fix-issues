@@ -6,7 +6,12 @@ import { setMockRouteContext } from "./_mocks/tanstack-router";
 
 const ApiSettingsPage = (Route as unknown as { options: { component: ComponentType } }).options.component;
 
-function load(mode = "cloud", appName = "Online Reset", appUrl = "https://reset.example.com/", readOnly = false) {
+function load(
+	mode = "cloud",
+	appName = "AI Solutions NZ",
+	appUrl = "https://visibility.example.com/",
+	readOnly = false,
+) {
 	setMockRouteContext({ clientConfig: { mode, branding: { name: appName, url: appUrl }, features: { readOnly } } });
 }
 
@@ -45,7 +50,7 @@ export const Reference: Story = {
 		);
 		// The reference reads the instance's own spec rather than a hosted copy.
 		await expect(await canvas.findByTestId("api-reference-mock")).toHaveTextContent("/api/v1/openapi.json");
-		// Online Reset: the typed SDKs are the upstream project's packages, so none is advertised.
+		// AI Solutions NZ: the typed SDKs are the upstream project's packages, so none is advertised.
 		await expect(canvas.queryByRole("heading", { name: "SDKs" })).toBeNull();
 		await expect(canvas.queryByText(/elmo/i)).toBeNull();
 	},
@@ -78,7 +83,7 @@ export const Whitelabel: Story = {
 
 export const ReadOnlyDeployment: Story = {
 	render: () => {
-		load("demo", "Online Reset", "https://reset.example.com/", true);
+		load("demo", "AI Solutions NZ", "https://visibility.example.com/", true);
 		return <ApiSettingsPage />;
 	},
 	play: async ({ canvasElement }) => {

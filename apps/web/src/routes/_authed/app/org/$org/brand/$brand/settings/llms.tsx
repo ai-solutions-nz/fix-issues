@@ -386,7 +386,7 @@ function AddPlatformsCard({ platforms }: { platforms: ModelPickerState["unconfig
 						</div>
 					))}
 				</div>
-				{/* Online Reset: shown once public docs exist (brand-links.ts). */}
+				{/* AI Solutions NZ: shown once public docs exist (brand-links.ts). */}
 				{PROVIDERS_DOCS_URL && (
 					<a
 						href={PROVIDERS_DOCS_URL}

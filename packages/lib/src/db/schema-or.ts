@@ -60,7 +60,7 @@ export const orBrandProfiles = pgTable("or_brand_profiles", {
 		.notNull(),
 }).enableRLS();
 
-/** Buyer-question metadata Online Reset keeps beside Elmo's prompt rows. */
+/** Buyer-question metadata AI Solutions NZ keeps beside Elmo's prompt rows. */
 export const orPromptMeta = pgTable(
 	"or_prompt_meta",
 	{
@@ -101,7 +101,7 @@ export const orMemberBrandAccess = pgTable(
 	(table) => [primaryKey({ columns: [table.organizationId, table.userId, table.brandId] })],
 ).enableRLS();
 
-/** One audit of a brand's site (and its competitors' sites): the Elmo site-audit report plus Online Reset findings. */
+/** One audit of a brand's site (and its competitors' sites): the Elmo site-audit report plus AI Solutions NZ findings. */
 export const orAuditRuns = pgTable(
 	"or_audit_runs",
 	{

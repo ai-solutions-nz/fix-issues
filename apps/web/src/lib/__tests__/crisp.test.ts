@@ -74,7 +74,7 @@ describe("initCrisp", () => {
 });
 
 describe("the demo next steps", () => {
-	// Online Reset: no walkthrough, sign-up or docs site exists yet (brand-links.ts),
+	// AI Solutions NZ: no walkthrough, sign-up or docs site exists yet (brand-links.ts),
 	// so only the greeting is shown, and no message links anywhere.
 	it("greets once on first open and offers no link while no destination exists", async () => {
 		const { initCrisp } = await loadCrisp();
@@ -87,7 +87,7 @@ describe("the demo next steps", () => {
 		const shown = queue().filter((command) => command[0] === "do" && command[1] === "message:show");
 		expect(shown, "reopening the chat must not repeat the sequence").toHaveLength(1);
 		const text = JSON.stringify(shown);
-		expect(text).toContain("Online Reset demo");
+		expect(text).toContain("AI Visibility demo");
 		expect(text).not.toMatch(/https?:/);
 	});
 

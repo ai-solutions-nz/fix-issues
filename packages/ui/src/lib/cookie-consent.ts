@@ -7,8 +7,12 @@ export interface CookieConsent {
 
 const CONSENT_STORAGE_KEY = "elmo.cookie-consent";
 
-/** Bump when the categories change, so a stored answer is re-asked rather than misread. */
-const CONSENT_VERSION = 1;
+/**
+ * Bump when the categories change, so a stored answer is re-asked rather than misread.
+ * 2 (Packet 4): answers saved before the banner masked un-offered categories
+ * could hold `marketing: true` for advertising the visitor was never shown.
+ */
+export const CONSENT_VERSION = 2;
 
 /** Fired on this window whenever the stored answer changes. */
 const CONSENT_CHANGE_EVENT = "elmo:consent-change";
@@ -16,6 +20,20 @@ const CONSENT_CHANGE_EVENT = "elmo:consent-change";
 export const CONSENT_OPEN_EVENT = "elmo:consent-open";
 
 export const ACCEPT_ALL: CookieConsent = { analytics: true, marketing: true };
+
+/** The categories a banner actually showed the visitor. Analytics is always offered. */
+export interface OfferedCategories {
+	marketing: boolean;
+}
+
+/**
+ * Review fix (Packet 4): what may be stored is only what was
+ * offered. A category the visitor never saw is recorded as refused, whichever
+ * button they pressed, so a tag added later can't run on an old answer.
+ */
+export function maskToOffered(consent: CookieConsent, offered: OfferedCategories): CookieConsent {
+	return { analytics: consent.analytics, marketing: offered.marketing && consent.marketing };
+}
 export const REJECT_ALL: CookieConsent = { analytics: false, marketing: false };
 
 interface StoredConsent extends CookieConsent {

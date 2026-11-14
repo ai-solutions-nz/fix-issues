@@ -26,7 +26,7 @@ export const FEATURES_BY_MODE: Record<DeploymentMode, FeaturesConfig> = {
 		teamInvites: false,
 	},
 	demo: {
-		// Online Reset: nothing to promote until a hosted app exists (brand-links.ts).
+		// AI Solutions NZ: nothing to promote until a hosted app exists (brand-links.ts).
 		promotesCloud: Boolean(PUBLIC_APP_URL),
 		readOnly: true,
 		showOptimizeButton: false,

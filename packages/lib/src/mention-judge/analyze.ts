@@ -292,7 +292,7 @@ export function createMentionAnalyzer(
 			JEV_MODEL,
 		);
 	}
-	// Online Reset: with no paid judge configured, fall back to the deterministic
+	// AI Solutions NZ: with no paid judge configured, fall back to the deterministic
 	// text matcher instead of refusing to run. Sentiment is then not judged.
 	console.log(
 		"[mention-judge] No TYPESAFE_API_KEY or OPENROUTER_API_KEY: using the deterministic matcher (no sentiment).",

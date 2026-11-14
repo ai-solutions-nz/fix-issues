@@ -45,7 +45,7 @@ export function firstUnused(candidates: string[], taken: Set<string>): string {
  * mask another row that answers to the same name.
  */
 async function takenOrgNames(candidates: string[], _conn: DbConnection, excludeOrgId?: string): Promise<Set<string>> {
-	// Online Reset: slugs are one instance-wide namespace, but a tenant connection
+	// AI Solutions NZ: slugs are one instance-wide namespace, but a tenant connection
 	// sees only its own organizations, so the check reads the system handle. The
 	// unique index stays the guarantee; this answers only "taken or not".
 	const rows = await serviceDb
@@ -111,7 +111,7 @@ export const claimNewBrandSlug = <T>(write: () => Promise<T>): Promise<T> =>
 	claimBrandSlug(write, "Brand creation failed due to a concurrent create — please retry");
 
 /**
- * Online Reset: brand ids are global but a tenant sees only its own brands, so a
+ * AI Solutions NZ: brand ids are global but a tenant sees only its own brands, so a
  * name-based id would either collide with another tenant's (a 500) or, checked
  * on the system handle, reveal that one exists. A random suffix does neither.
  */

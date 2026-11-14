@@ -1,5 +1,5 @@
 /**
- * Online Reset: the database tenant scope for each kind of caller. Every web
+ * AI Solutions NZ: the database tenant scope for each kind of caller. Every web
  * entry point (server functions, /api/v1, MCP tools) runs inside it, so
  * Postgres row-level security bounds what the request can read or write even
  * if an application-level check were missed.

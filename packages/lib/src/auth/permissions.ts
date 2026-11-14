@@ -16,7 +16,7 @@ export const statement = {
 	report: ["generate"],
 	/** Read by the api-key plugin before it mints a key for an organization. */
 	apiKey: ["create", "read", "update", "delete"],
-	/** Online Reset: optimisation content and the approval gate in front of publishing. */
+	/** AI Solutions NZ: optimisation content and the approval gate in front of publishing. */
 	content: ["read", "create", "update", "publish"],
 	approval: ["read", "decide"],
 } as const;
@@ -55,7 +55,7 @@ export const memberRole = ac.newRole({
 });
 
 /**
- * Online Reset: the agency's client. Sees only the brands granted to them in
+ * AI Solutions NZ: the agency's client. Sees only the brands granted to them in
  * `or_member_brand_access` (enforced in the database by `or.brand_ids`), and
  * can review and approve content for those brands but not change setup.
  */

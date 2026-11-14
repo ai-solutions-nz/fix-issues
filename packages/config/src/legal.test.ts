@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { legalUrl, showsLegalLinks } from "./legal";
 
-// Online Reset: no legal site is configured yet (brand-links.ts), so no
+// AI Solutions NZ: no legal site is configured yet (brand-links.ts), so no
 // deployment links any agreements, and nothing points at the upstream project's.
 describe("showsLegalLinks", () => {
 	it("shows no legal links in any mode while no legal site is configured", () => {

@@ -1,5 +1,5 @@
 /**
- * Online Reset (Packet 1c): the web app's isolation depends on how its database
+ * AI Solutions NZ (Packet 1c): the web app's isolation depends on how its database
  * login is set up, so the server checks it at startup and refuses to serve when
  * it is wrong:
  * - the login must be able to `SET ROLE or_tenant` (membership with SET), or

@@ -1,4 +1,4 @@
-/** Online Reset server functions. Every one runs inside withTenant, so Postgres row-level security applies. */
+/** AI Solutions NZ server functions. Every one runs inside withTenant, so Postgres row-level security applies. */
 import { createServerFn } from "@tanstack/react-start";
 import type { DbConnection } from "@workspace/lib/db/db-connection";
 import { orContentItems } from "@workspace/lib/db/schema-or";

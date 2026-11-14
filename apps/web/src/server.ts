@@ -12,7 +12,7 @@ import { resolveClarityProjectId } from "@/server/clarity";
 void startCredentialRefresh();
 
 /**
- * Online Reset (Packet 1c): refuse to serve unless the database login is safe
+ * AI Solutions NZ (Packet 1c): refuse to serve unless the database login is safe
  * for tenant isolation (member of or_tenant, not a superuser, no BYPASSRLS).
  * `OR_DB_ROLE_CHECK=warn` downgrades this to a warning for local development
  * against a superuser database, and only when NODE_ENV is explicitly
@@ -40,7 +40,7 @@ const strictTransportSecurity =
 	process.env.DEPLOYMENT_MODE === "whitelabel" ? "max-age=63072000" : "max-age=63072000; includeSubDomains";
 
 /**
- * Online Reset: the policy names only configured third parties (lib/csp.ts).
+ * AI Solutions NZ: the policy names only configured third parties (lib/csp.ts).
  * The upstream PostHog proxy and the Crisp hosts are gone; a support chat
  * added later needs its hosts added there.
  */
@@ -48,6 +48,7 @@ const SECURITY_HEADERS: Record<string, string> = {
 	"Content-Security-Policy": buildContentSecurityPolicy({
 		posthogHost: process.env.DISABLE_TELEMETRY ? undefined : process.env.VITE_POSTHOG_HOST,
 		clarity: Boolean(resolveClarityProjectId()),
+		sentry: Boolean(process.env.VITE_SENTRY_DSN),
 		adTags: AD_TAG_CSP,
 	}),
 	"Strict-Transport-Security": strictTransportSecurity,

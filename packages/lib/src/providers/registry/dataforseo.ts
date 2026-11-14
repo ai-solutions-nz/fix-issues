@@ -24,7 +24,7 @@ import { type Attempt, retryTransient, sanitizeForJson } from "./scrape-shared";
 const SERP_MODELS = new Set(["google-ai-mode"]);
 
 /**
- * Online Reset: the run's location as DataForSEO fields, defaulting to the
+ * AI Solutions NZ: the run's location as DataForSEO fields, defaulting to the
  * upstream US code only when no location was requested.
  */
 function dfsLocation(location?: GeoTarget): { location_code?: number; location_name?: string } {

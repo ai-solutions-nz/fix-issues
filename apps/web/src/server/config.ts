@@ -31,16 +31,25 @@ function resolvePosthogKey(): string | undefined {
 	return process.env.VITE_POSTHOG_KEY || undefined;
 }
 
-/** Online Reset: no default host (upstream's proxy is gone); PostHog stays off until this is set. */
+/**
+ * AI Solutions NZ: no default host (upstream's proxy is gone); PostHog stays
+ * off until this is set, and an http (or any non-https) host is refused.
+ */
 export function resolvePosthogHost(): string | undefined {
 	if (process.env.DISABLE_TELEMETRY) return undefined;
-	return process.env.VITE_POSTHOG_HOST || undefined;
+	const host = process.env.VITE_POSTHOG_HOST;
+	if (!host) return undefined;
+	try {
+		return new URL(host).protocol === "https:" ? host : undefined;
+	} catch {
+		return undefined;
+	}
 }
 
 export function resolveCrispWebsiteId(): string | undefined {
 	const mode = getDeploymentModeFromEnv();
 	if (mode !== "cloud" && mode !== "demo") return undefined;
-	// Online Reset: empty until we have our own support chat (brand-links.ts).
+	// AI Solutions NZ: empty until we have our own support chat (brand-links.ts).
 	return CRISP_WEBSITE_ID || undefined;
 }
 

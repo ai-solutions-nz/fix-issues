@@ -2,7 +2,7 @@
 // mapping, credential redaction) and the page create/update flow are adapted
 // from Canonry packages/integration-wordpress/src/wordpress-client.ts at
 // f5d4612 (MIT, see THIRD_PARTY_NOTICES.md). Snapshot-and-restore rollback is
-// Online Reset's own; WordPress core has no revision "restore" endpoint.
+// AI Solutions NZ's own; WordPress core has no revision "restore" endpoint.
 import {
 	type PublishablePage,
 	PublishError,

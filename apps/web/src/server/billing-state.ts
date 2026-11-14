@@ -1,5 +1,5 @@
 /**
- * The billing settings page's data (Online Reset, Packet 1c). Kept apart from
+ * The billing settings page's data (AI Solutions NZ, Packet 1c). Kept apart from
  * billing-core, which the REST routes and MCP tools import: this module needs
  * the auth helpers, and those construct better-auth when imported.
  */
@@ -46,7 +46,7 @@ export function liveSubscription<T extends { status: string | null }>(row: T | n
 /** The billing settings page's data, for a signed-in member who is not a client. */
 export async function loadBillingState(userId: string, organizationId: string): Promise<BillingState> {
 	const org = await requireOrganization(userId, organizationId);
-	// Online Reset (Packet 1c): plan, status, Stripe ids, renewal date and seats
+	// AI Solutions NZ (Packet 1c): plan, status, Stripe ids, renewal date and seats
 	// are the agency's business, not its clients'.
 	if (org.role === "client") throw new Error("Forbidden: billing is not available to client users");
 	const deployment = getDeployment();

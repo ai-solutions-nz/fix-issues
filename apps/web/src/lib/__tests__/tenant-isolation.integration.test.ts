@@ -1,5 +1,5 @@
 /**
- * Online Reset: database-enforced tenant isolation for every legacy Elmo entry
+ * AI Solutions NZ: database-enforced tenant isolation for every legacy Elmo entry
  * point. The application-level checks are deliberately taken out of the way
  * (the caller is an instance-admin principal, which those checks let through
  * to anything), while the database tenant scope is pinned to tenant A. Every

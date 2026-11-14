@@ -14,7 +14,7 @@ import { openCookiePreferences } from "@workspace/ui/lib/cookie-consent";
 import { asksForConsent } from "@/lib/consent-policy";
 
 /**
- * Online Reset (Packet 2b): its own control, not an item in the legal menu
+ * AI Solutions NZ (Packet 2b): its own control, not an item in the legal menu
  * (hidden until our legal documents exist), so anyone who was asked for
  * consent can always change or withdraw it.
  */
@@ -51,7 +51,7 @@ export function NavAppInfo() {
 		);
 	}
 
-	// Online Reset: the website and source links appear only once those sites
+	// AI Solutions NZ: the website and source links appear only once those sites
 	// exist (brand-links.ts); until then the version is plain text.
 	const versionClass = "flex-1 text-xs font-medium text-muted-foreground";
 	return (

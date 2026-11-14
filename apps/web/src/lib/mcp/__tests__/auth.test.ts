@@ -31,7 +31,7 @@ vi.mock("@workspace/lib/or/tenant-scope", () => ({ userTenantScope }));
 vi.mock("@workspace/lib/db/db", async () => {
 	const { user } = await import("@workspace/lib/db/schema");
 	return {
-		// Online Reset: these reads run before any tenant scope, on the system handle.
+		// AI Solutions NZ: these reads run before any tenant scope, on the system handle.
 		db: {},
 		serviceDb: {
 			select: () => ({

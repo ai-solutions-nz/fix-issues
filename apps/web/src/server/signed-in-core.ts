@@ -1,5 +1,5 @@
 /**
- * Online Reset: the database work behind signed-in actions that the tenant
+ * AI Solutions NZ: the database work behind signed-in actions that the tenant
  * scope (Packet 1) had broken, kept apart from their server functions so the
  * integration tests can run each one as a real signed-in user.
  */

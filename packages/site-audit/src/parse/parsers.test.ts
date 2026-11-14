@@ -31,7 +31,7 @@ describe("parseSitemap", () => {
 		expect(parseSitemap("<html><body>Not found</body></html>").kind).toBe("invalid");
 	});
 
-	// Online Reset: relative, not absolute. A fixed 2000 ms bound failed on a
+	// AI Solutions NZ: relative, not absolute. A fixed 2000 ms bound failed on a
 	// slower GitHub runner (2687 ms) with no regression. Timing N and 4N
 	// entries checks the same property on any machine: linear growth gives a
 	// ratio near 4, quadratic near 16. Best of three runs damps runner noise.

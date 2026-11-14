@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Online Reset (Packet 2b): the demo chat's next steps once our sites exist.
+// AI Solutions NZ (Packet 2b): the demo chat's next steps once our sites exist.
 // brand-links.ts ships empty; crisp.test.ts covers that state.
 vi.mock("@workspace/config/brand-links", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@workspace/config/brand-links")>()),

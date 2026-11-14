@@ -169,7 +169,7 @@ export function createApiHandler<P = Record<string, string>, B = undefined>(opts
 		if ("response" in parsed) return withRateLimit(parsed.response, auth);
 
 		try {
-			// Online Reset: the handler's queries run under the key's tenant scope, enforced by Postgres RLS.
+			// AI Solutions NZ: the handler's queries run under the key's tenant scope, enforced by Postgres RLS.
 			const result = await withTenantOrSystem(tenantScopeForPrincipal(auth), () =>
 				opts.handle({ params: parsed.params, body: parsed.body, request, auth }),
 			);

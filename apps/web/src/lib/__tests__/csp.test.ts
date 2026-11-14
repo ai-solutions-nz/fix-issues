@@ -47,13 +47,13 @@ describe("ad tag CSP sources", () => {
 
 describe("buildContentSecurityPolicy", () => {
 	it("names no third-party analytics or ad host when none is configured", () => {
-		const policy = buildContentSecurityPolicy({ clarity: false, adTags: NO_ADS });
-		expect(policy).not.toMatch(/googletagmanager|google\.com|facebook|clarity|bing\.com|posthog|elmohq|crisp/);
+		const policy = buildContentSecurityPolicy({ clarity: false, sentry: false, adTags: NO_ADS });
+		expect(policy).not.toMatch(/googletagmanager|google\.com|facebook|clarity|bing\.com|posthog|elmohq|crisp|sentry/);
 		expect(directive(policy, "script-src")).toBe("script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com");
 	});
 
 	it("adds Clarity's hosts only when Clarity is enabled", () => {
-		const policy = buildContentSecurityPolicy({ clarity: true, adTags: NO_ADS });
+		const policy = buildContentSecurityPolicy({ clarity: true, sentry: false, adTags: NO_ADS });
 		expect(directive(policy, "script-src")).toContain("https://*.clarity.ms");
 		expect(directive(policy, "connect-src")).toContain("https://c.bing.com");
 	});
@@ -62,19 +62,32 @@ describe("buildContentSecurityPolicy", () => {
 		const policy = buildContentSecurityPolicy({
 			posthogHost: "https://ph.example.com",
 			clarity: false,
+			sentry: false,
 			adTags: NO_ADS,
 		});
 		expect(directive(policy, "connect-src")).toContain("https://ph.example.com");
 		const insecure = buildContentSecurityPolicy({
 			posthogHost: "http://ph.example.com",
 			clarity: false,
+			sentry: false,
 			adTags: NO_ADS,
 		});
 		expect(insecure).not.toContain("ph.example.com");
 	});
 
+	it("allows Sentry's ingest hosts only when a Sentry DSN is configured", () => {
+		const off = buildContentSecurityPolicy({ clarity: false, sentry: false, adTags: NO_ADS });
+		expect(off).not.toContain("sentry.io");
+		const on = buildContentSecurityPolicy({ clarity: false, sentry: true, adTags: NO_ADS });
+		expect(directive(on, "connect-src")).toContain("https://*.sentry.io");
+	});
+
 	it("adds ad hosts only when an ad id is set", () => {
-		const policy = buildContentSecurityPolicy({ clarity: false, adTags: adTagCspFor({ google: true, meta: false }) });
+		const policy = buildContentSecurityPolicy({
+			clarity: false,
+			sentry: false,
+			adTags: adTagCspFor({ google: true, meta: false }),
+		});
 		expect(directive(policy, "script-src")).toContain("https://*.googletagmanager.com");
 		expect(policy).not.toContain("facebook");
 	});

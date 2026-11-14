@@ -5,7 +5,7 @@ import { CodeBlock, InlineCode } from "@/components/code-block";
 import { useOrganization } from "@/hooks/use-organizations";
 import { pageHead } from "@/lib/route-head";
 
-// Online Reset: the page exists only once a skill is published (brand-links.ts);
+// AI Solutions NZ: the page exists only once a skill is published (brand-links.ts);
 // the upstream project's skill and blog post are not linked.
 const INSTALL_COMMAND = `npx skills add ${PUBLIC_SKILL_REPO}`;
 const SKILL_URL = PUBLIC_SOURCE_URL ? `${PUBLIC_SOURCE_URL}/tree/main/skills/aeo` : "";

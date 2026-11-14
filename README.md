@@ -1,8 +1,8 @@
-# Online Reset — Your AI Online Performance Partner
+# AI Solutions NZ — AI Visibility (SEO, AEO & GEO)
 
-Private codebase for the Online Reset AEO/GEO platform (AI Solutions NZ).
+Private codebase for AI Solutions NZ's AI Visibility platform.
 
-Online Reset is built on a fork of [Elmo](https://github.com/elmohq/elmo) (MIT) at
+AI Visibility is built on a fork of [Elmo](https://github.com/elmohq/elmo) (MIT) at
 upstream commit `db2d52b560b1917ea4e8fe4b619f1c402b8cdb14`, extended with modules
 ported from other permissively licensed projects. See `UPSTREAM.md` for every
 reused source and `THIRD_PARTY_NOTICES.md` for the notices we must keep.

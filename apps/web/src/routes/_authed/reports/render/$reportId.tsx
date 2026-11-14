@@ -1056,7 +1056,7 @@ function Finding({ children }: { children: React.ReactNode }) {
 	);
 }
 
-/** Online Reset: the deployment's own URL, else our public site once it exists (brand-links.ts), else nothing. */
+/** AI Solutions NZ: the deployment's own URL, else our public site once it exists (brand-links.ts), else nothing. */
 function reportSiteUrl(branding?: ClientConfig["branding"]): string {
 	return branding?.url || (PUBLIC_SITE_URL ? new URL(PUBLIC_SITE_URL).host : "");
 }

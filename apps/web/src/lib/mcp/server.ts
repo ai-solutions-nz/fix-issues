@@ -12,13 +12,13 @@ import { type McpTool, toolsFor } from "./tools";
 import type { McpToolContext } from "./tools/define";
 
 export const MCP_SERVER_INFO = {
-	name: "online-reset",
-	title: "Online Reset AI visibility",
+	name: "ai-visibility",
+	title: "AI Solutions NZ AI Visibility",
 	version: __APP_VERSION__,
 } as const;
 
 const INSTRUCTIONS = [
-	"Online Reset tracks how AI models — ChatGPT, Claude, Perplexity, Gemini, Google AI Overviews — mention and cite brands.",
+	"AI Visibility tracks how AI models — ChatGPT, Claude, Perplexity, Gemini, Google AI Overviews — mention and cite brands.",
 	"",
 	"Start with list_brands to find a brand id; every other brand tool takes one.",
 	"get_analytics answers 'how is this brand doing'; get_citations and get_query_fanout answer 'why', and are where an",
@@ -46,7 +46,7 @@ function isWriteDenied(err: unknown): err is Error {
 	return err instanceof Error && err.name === "WriteDeniedError";
 }
 
-/** Online Reset: every tool runs under the connection's tenant scope, enforced by Postgres RLS. */
+/** AI Solutions NZ: every tool runs under the connection's tenant scope, enforced by Postgres RLS. */
 export function runToolInTenant(
 	tool: McpTool,
 	context: McpToolContext,

@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import type { Job, PgBoss } from "pg-boss";
 import { runPromptNow } from "./jobs/process-prompt";
 
-/** Online Reset background jobs: weekly site audits and opportunity refreshes for every profiled brand. */
+/** AI Solutions NZ background jobs: weekly site audits and opportunity refreshes for every profiled brand. */
 export const OR_AUDIT_SWEEP_QUEUE = "or-audit-sweep";
 export const OR_BRAND_AUDIT_QUEUE = "or-brand-audit";
 export const OR_FAILED_QUEUE = "or-failed";
@@ -46,7 +46,7 @@ export async function brandAuditJob(jobs: Job<BrandAuditData>[]): Promise<void> 
 	}
 }
 
-export async function registerOnlineResetJobs(boss: PgBoss): Promise<void> {
+export async function registerAiVisibilityJobs(boss: PgBoss): Promise<void> {
 	await boss.createQueue(OR_FAILED_QUEUE, { retentionSeconds: 60 * 60 * 24 * 14 });
 	await boss.createQueue(OR_AUDIT_SWEEP_QUEUE, {
 		retryLimit: 2,
@@ -81,5 +81,5 @@ export async function registerOnlineResetJobs(boss: PgBoss): Promise<void> {
 		console.log(`[or-audit-sweep] queued ${queued} brand audit(s)`);
 	});
 	await boss.work<BrandAuditData>(OR_BRAND_AUDIT_QUEUE, { localConcurrency: 2 }, brandAuditJob);
-	console.log("Registered Online Reset jobs: or-audit-sweep (weekly), or-brand-audit");
+	console.log("Registered AI Visibility jobs: or-audit-sweep (weekly), or-brand-audit");
 }

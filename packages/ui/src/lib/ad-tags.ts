@@ -1,7 +1,7 @@
 import { onMarketingConsent } from "./cookie-consent";
 import { afterPageIdle } from "./idle";
 
-// Online Reset: the upstream project's Google Ads and Meta Pixel ids (and its
+// AI Solutions NZ: the upstream project's Google Ads and Meta Pixel ids (and its
 // conversion labels and production hosts) are removed. With no ids, no tag
 // loads anywhere. Set our own ids, labels and hosts here to enable them.
 const GOOGLE_ADS_ID = "";
@@ -41,7 +41,7 @@ const META_CSP: CspSources = {
 };
 
 /**
- * Online Reset (Packet 2c): each network's hosts are allowed only when its id
+ * AI Solutions NZ (Packet 2c): each network's hosts are allowed only when its id
  * is set. Allowing googletagmanager.com and google.com in script-src with no
  * tag to load is a known CSP bypass, so with no ids the policy names neither.
  */

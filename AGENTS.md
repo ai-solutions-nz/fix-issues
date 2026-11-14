@@ -2,13 +2,13 @@
 
 ## What this is
 
-Online Reset (AI Solutions NZ) is a white-labelled AEO/GEO platform: it measures how AI answer engines mention, cite and recommend a client's business, audits the client's site, finds evidence-backed opportunities, and runs an approval-gated optimisation workflow. It is a fork of Elmo (MIT) — a **pnpm + Turborepo monorepo** on **Node.js 24**, **TypeScript**, **PostgreSQL**. Read `BUILD-STATUS.md` first, then `docs/research/05-recommended-architecture.md`.
+AI Visibility (SEO, AEO & GEO) by AI Solutions NZ is a white-labelled AEO/GEO platform: it measures how AI answer engines mention, cite and recommend a client's business, audits the client's site, finds evidence-backed opportunities, and runs an approval-gated optimisation workflow. It is a fork of Elmo (MIT) — a **pnpm + Turborepo monorepo** on **Node.js 24**, **TypeScript**, **PostgreSQL**. Read `BUILD-STATUS.md` first, then `docs/research/05-recommended-architecture.md`.
 
 - `apps/web` — dashboard + API + MCP (TanStack Start, port 3000)
 - `apps/worker` — pg-boss background jobs
-- `apps/cli` — upstream deployment CLI (not used by Online Reset yet)
+- `apps/cli` — upstream deployment CLI (not used by AI Visibility yet)
 - `packages/lib` — shared logic, Drizzle schema/migrations
-- `packages/or-core` — Online Reset domain logic (measurement rules, matcher, SoV, NZ geo, scoring)
+- `packages/or-core` — AI Visibility domain logic (measurement rules, matcher, SoV, NZ geo, scoring)
 - `packages/ui`, `packages/config`, `packages/deployment`, `packages/api-spec`, `packages/og`, `packages/site-audit`
 
 ## Non-negotiable rules

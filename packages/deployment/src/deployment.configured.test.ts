@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-// Online Reset (Packet 2b): demo promotes the hosted app once one exists.
+// AI Solutions NZ (Packet 2b): demo promotes the hosted app once one exists.
 // brand-links.ts ships empty; deployment.test.ts covers that state.
 vi.mock("@workspace/config/brand-links", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@workspace/config/brand-links")>()),

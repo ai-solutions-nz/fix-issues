@@ -1,5 +1,7 @@
 # Online Reset: open-source discovery, gap analysis and architecture
 
+> **Renamed (Packet 4, 2026-11-14).** The product is now **AI Solutions NZ — AI Visibility (SEO, AEO & GEO)**. "Online Reset" was its working name when this research was written. These documents are a dated record and keep that name; it is not used anywhere in the product.
+
 This folder holds the research deliverables (2026-11-07). The research was done by reading source code only. Nothing was built or deployed, and no paid API was used.
 
 | File | Contents |

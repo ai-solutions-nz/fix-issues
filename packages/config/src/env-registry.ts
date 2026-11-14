@@ -443,7 +443,7 @@ export const ENV_REGISTRY: EnvVarSpec[] = [
 		scope: "server",
 		requiredBy: ["cloud"],
 		description:
-			"Sender address for transactional email, in the form: Online Reset <notifications@updates.example.com>. The domain must be verified in Resend.",
+			"Sender address for transactional email, in the form: AI Solutions NZ <notifications@updates.example.com>. The domain must be verified in Resend.",
 	},
 	{
 		name: "TURNSTILE_SECRET_KEY",

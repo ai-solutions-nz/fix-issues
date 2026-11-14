@@ -48,9 +48,9 @@ export function verificationEmail(input: { url: string }): EmailContent {
 export function passwordResetEmail(input: { url: string }): EmailContent {
 	const { url } = input;
 	return {
-		subject: "Reset your Online Reset password",
+		subject: "Reset your AI Solutions NZ password",
 		html: wrapHtml("Reset your password", "Click the button below to choose a new password.", url),
-		text: `Reset your Online Reset password by visiting this link: ${url}`,
+		text: `Reset your AI Solutions NZ password by visiting this link: ${url}`,
 	};
 }
 
@@ -59,13 +59,13 @@ export function invitationEmail(input: { inviterName: string; orgName: string; u
 	const safeInviterName = escapeHtml(inviterName);
 	const safeOrgName = escapeHtml(orgName);
 	return {
-		subject: `${inviterName} invited you to ${orgName} on Online Reset`,
+		subject: `${inviterName} invited you to ${orgName} on AI Solutions NZ`,
 		html: wrapHtml(
 			`You've been invited to join ${safeOrgName}`,
-			`${safeInviterName} invited you to join ${safeOrgName} on Online Reset. Click the button below to accept.`,
+			`${safeInviterName} invited you to join ${safeOrgName} on AI Solutions NZ. Click the button below to accept.`,
 			url,
 		),
-		text: `${inviterName} invited you to join ${orgName} on Online Reset. Accept the invitation here: ${url}`,
+		text: `${inviterName} invited you to join ${orgName} on AI Solutions NZ. Accept the invitation here: ${url}`,
 	};
 }
 
@@ -73,7 +73,7 @@ export function paymentFailedEmail(input: { orgName: string; graceDays: number; 
 	const { orgName, graceDays, url } = input;
 	const safeOrgName = escapeHtml(orgName);
 	return {
-		subject: `Payment failed for ${orgName} on Online Reset`,
+		subject: `Payment failed for ${orgName} on AI Solutions NZ`,
 		html: wrapHtml(
 			"Payment failed",
 			`We couldn't renew the subscription for the ${safeOrgName} organization. Tracking continues while Stripe retries, but it pauses after ${graceDays} days unless a payment succeeds — update your card in the billing portal to avoid an interruption.`,
@@ -88,7 +88,7 @@ export function paymentRecoveredEmail(input: { orgName: string; url: string }): 
 	const { orgName, url } = input;
 	const safeOrgName = escapeHtml(orgName);
 	return {
-		subject: `Payment received for ${orgName} on Online Reset`,
+		subject: `Payment received for ${orgName} on AI Solutions NZ`,
 		html: wrapHtml(
 			"You're all set",
 			`Payment for the ${safeOrgName} organization went through and the subscription is active again. No further action is needed.`,
@@ -103,7 +103,7 @@ export function subscriptionEndedEmail(input: { orgName: string; url: string }):
 	const { orgName, url } = input;
 	const safeOrgName = escapeHtml(orgName);
 	return {
-		subject: `Your Online Reset subscription for ${orgName} has ended`,
+		subject: `Your AI Solutions NZ subscription for ${orgName} has ended`,
 		html: wrapHtml(
 			"Subscription ended",
 			`The subscription for the ${safeOrgName} organization has ended, so prompt tracking is stopped. Your existing data stays viewable, and choosing a plan restarts tracking.`,

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-// Online Reset (Packet 2b): the behaviour once our own legal site exists.
+// AI Solutions NZ (Packet 2b): the behaviour once our own legal site exists.
 // brand-links.ts ships empty; legal.test.ts covers that state.
 vi.mock("./brand-links", () => ({ PUBLIC_LEGAL_URL: "https://legal.example.com" }));
 

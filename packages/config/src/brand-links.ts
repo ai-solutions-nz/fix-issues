@@ -1,5 +1,5 @@
 /**
- * Online Reset (Packet 2): the public places the product links to. None of
+ * AI Solutions NZ (Packet 2): the public places the product links to. None of
  * them exists yet, so each is empty, and every link built from one is hidden
  * or left out. Nothing points at the upstream project's sites. Set a value
  * here once the corresponding site exists.

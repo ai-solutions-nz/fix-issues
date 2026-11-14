@@ -1,7 +1,9 @@
 import { PUBLIC_DOCS_URL, PUBLIC_SUPPORT_CHAT_ID } from "./brand-links";
 
 /** Whitelabel never falls back to these; it must set its own branding. */
-export const DEFAULT_APP_NAME = "Online Reset";
+export const DEFAULT_APP_NAME = "AI Solutions NZ";
+/** The product line shown beside the brand (Packet 4: owner decision, never "AI Solutions NZ"). */
+export const PRODUCT_LINE = "AI Visibility (SEO, AEO & GEO)";
 export const DEFAULT_APP_ICON = "/icons/elmo-icon.svg";
 export const DEFAULT_APP_URL = "http://localhost:3000/";
 

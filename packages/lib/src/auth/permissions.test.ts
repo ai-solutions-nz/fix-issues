@@ -38,7 +38,7 @@ describe("organization roles", () => {
 	});
 });
 
-describe("Online Reset client role", () => {
+describe("client role (brand-scoped access)", () => {
 	it("can review and approve content but not change setup or publish", async () => {
 		const { clientRole } = await import("./permissions");
 		expect(clientRole.authorize({ approval: ["decide"] }).success).toBe(true);

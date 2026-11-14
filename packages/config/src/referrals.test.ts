@@ -11,7 +11,7 @@ import {
 
 /**
  * The contract every link has to keep once a site exists: land on the right
- * page, and say where the click came from. Online Reset has no public site yet
+ * page, and say where the click came from. AI Solutions NZ has no public site yet
  * (brand-links.ts), so every builder returns "" and callers hide the link.
  */
 describe("referral links", () => {

@@ -34,7 +34,7 @@ export interface DashboardData {
 	>[];
 }
 
-/** Everything the Online Reset dashboard shows for one brand, assembled from stored evidence. */
+/** Everything the AI Solutions NZ dashboard shows for one brand, assembled from stored evidence. */
 export async function dashboardData(
 	conn: DbConnection,
 	brandId: string,

@@ -197,7 +197,7 @@ function PlanPicker({ paywall }: { paywall: PaywallRequired }) {
 
 			<LegalConsentNotice action="subscribing" />
 
-			{/* Online Reset: shown once there is an enquiries address (brand-links.ts). */}
+			{/* AI Solutions NZ: shown once there is an enquiries address (brand-links.ts). */}
 			{PUBLIC_CONTACT_EMAIL && (
 				<p className="text-center text-sm text-muted-foreground">
 					Need more brands, any other models, higher numbers of samples, SSO, white label, or custom limits?{" "}

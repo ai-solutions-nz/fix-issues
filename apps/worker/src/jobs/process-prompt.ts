@@ -39,7 +39,7 @@ export interface ProcessPromptData {
 interface PromptContext {
 	prompt: typeof prompts.$inferSelect;
 	brand: Brand;
-	/** Online Reset: where the brand's buyers ask from (its profile), or null. */
+	/** AI Solutions NZ: where the brand's buyers ask from (its profile), or null. */
 	location: Awaited<ReturnType<typeof brandGeoTarget>>;
 }
 
@@ -416,7 +416,7 @@ export async function processPromptJob(jobs: Job<ProcessPromptData>[]): Promise<
 }
 
 /**
- * Online Reset retest: run a prompt's planned targets now, outside its cadence,
+ * AI Solutions NZ retest: run a prompt's planned targets now, outside its cadence,
  * after a change was published. Same plan, providers and storage as a scheduled
  * cycle, and still refused when the organization is over its daily ceiling.
  * It does not reschedule; the regular cycle continues as before.

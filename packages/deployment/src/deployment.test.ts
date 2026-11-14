@@ -94,7 +94,7 @@ describe("getDeployment", () => {
 	});
 
 	it("promotes Elmo Cloud only on Elmo's own demo, not a read-only self-hosted install", () => {
-		// Online Reset: off until a hosted app URL is configured in brand-links.ts.
+		// AI Solutions NZ: off until a hosted app URL is configured in brand-links.ts.
 		expect(getDeployment({ env: { DEPLOYMENT_MODE: "demo" } }).features.promotesCloud).toBe(false);
 		resetDeploymentCache();
 		expect(getDeployment({ env: { DEPLOYMENT_MODE: "local", READ_ONLY: "true" } }).features.promotesCloud).toBe(false);

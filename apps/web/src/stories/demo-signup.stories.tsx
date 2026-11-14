@@ -41,7 +41,7 @@ export const HeaderCta: StoryObj = {
 		applyConfig(demoConfig);
 		return <DemoSignupCta />;
 	},
-	// Online Reset: no hosted sign-up exists yet (brand-links.ts), so even a demo
+	// AI Solutions NZ: no hosted sign-up exists yet (brand-links.ts), so even a demo
 	// that promotes it shows no call to action, rather than a dead link.
 	play: async ({ canvasElement }) => {
 		await expect(within(canvasElement).queryByRole("link")).toBeNull();
@@ -67,7 +67,7 @@ export const ReadOnlyRefusal: StoryObj = {
 	},
 	play: async ({ canvasElement }) => {
 		const alert = await within(canvasElement).findByRole("alert");
-		// Online Reset: the plain refusal, with no sign-up link, until a hosted app exists.
+		// AI Solutions NZ: the plain refusal, with no sign-up link, until a hosted app exists.
 		await expect(alert).toHaveTextContent(READ_ONLY_REFUSED);
 		await expect(within(alert).queryByRole("link")).toBeNull();
 	},

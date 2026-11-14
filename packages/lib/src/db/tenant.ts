@@ -24,7 +24,7 @@ type Tx = Parameters<Parameters<typeof serviceDb.transaction>[0]>[0];
 type PooledClient = { query: (...args: unknown[]) => unknown; release: (...args: unknown[]) => unknown };
 
 /**
- * Online Reset (Packets 1c, 1d): every query of a tenant transaction, whether
+ * AI Solutions NZ (Packets 1c, 1d): every query of a tenant transaction, whether
  * made through the shared `db` handle, the `tx` passed to the callback, or a
  * query built inside the scope and run later, goes through the transaction's
  * pooled connection. That connection is replaced by a guard which closes the

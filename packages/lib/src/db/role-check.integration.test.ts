@@ -1,5 +1,5 @@
 /**
- * Online Reset (Packet 1c): the startup check on the app's database login.
+ * AI Solutions NZ (Packet 1c): the startup check on the app's database login.
  * CI runs the integration suites as a NOSUPERUSER, NOBYPASSRLS login whose only
  * role grant is membership of or_tenant (see BUILD-STATUS.md), and there the
  * check must pass. Run as a superuser, it must fail and say why.

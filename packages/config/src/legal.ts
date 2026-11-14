@@ -2,7 +2,7 @@
 import { PUBLIC_LEGAL_URL } from "./brand-links";
 import type { DeploymentMode } from "./types";
 
-/** Empty until Online Reset publishes its own legal documents (brand-links.ts). */
+/** Empty until AI Solutions NZ publishes its own legal documents (brand-links.ts). */
 const LEGAL_SITE_URL = PUBLIC_LEGAL_URL;
 
 interface LegalDocument {

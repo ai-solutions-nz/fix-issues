@@ -507,7 +507,7 @@ function buildSummaryMarkdown(
 	contentGaps: { promptValue: string; competitorsMentioned: string[] }[],
 ): string {
 	const lines: string[] = [];
-	lines.push(`# Online Reset eval${report.brandName ? ` — ${report.brandName}` : ""}`, "");
+	lines.push(`# AI Visibility eval${report.brandName ? ` — ${report.brandName}` : ""}`, "");
 	lines.push(`Generated ${report.generatedAt}`, "");
 	lines.push(
 		`- Prompts: ${report.totals.prompts}`,

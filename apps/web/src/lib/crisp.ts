@@ -21,16 +21,16 @@ const DEMO_CLOUD_SIGNUP_URL = cloudSignupUrl("demo-chat");
 const SELF_HOST_DOCS_URL = PUBLIC_DOCS_URL ? `${PUBLIC_DOCS_URL}/getting-started` : "";
 
 const DEMO_GREETING =
-	"👋 You're in the Online Reset demo — it's read-only sample data, so click around freely. Ask me anything as you go.";
+	"👋 You're in the AI Visibility demo — it's read-only sample data, so click around freely. Ask me anything as you go.";
 
 // Not a carousel: at chatbox width its track shows one card at a time, which
 // left the last option off screen.
-// Online Reset: only steps whose destination exists (brand-links.ts) are offered.
+// AI Solutions NZ: only steps whose destination exists (brand-links.ts) are offered.
 const DEMO_STEP_LINES = [
 	[DEMO_WALKTHROUGH_URL, `• [Book a walkthrough](${DEMO_WALKTHROUGH_URL}) — 30 minutes on your own brand's data`],
 	[
 		DEMO_CLOUD_SIGNUP_URL,
-		`• [Start with Online Reset](${DEMO_CLOUD_SIGNUP_URL}) — the managed version, nothing to deploy`,
+		`• [Start with AI Visibility](${DEMO_CLOUD_SIGNUP_URL}) — the managed version, nothing to deploy`,
 	],
 	[SELF_HOST_DOCS_URL, `• [Self-host it free](${SELF_HOST_DOCS_URL}) — open source, running in about five minutes`],
 ]

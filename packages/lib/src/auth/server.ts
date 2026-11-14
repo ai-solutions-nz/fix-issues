@@ -108,7 +108,7 @@ export function createAuth(options?: CreateAuthOptions) {
 	}
 
 	return betterAuth({
-		// Online Reset: sessions and accounts are system data, never read in a tenant transaction.
+		// AI Solutions NZ: sessions and accounts are system data, never read in a tenant transaction.
 		database: drizzleAdapter(serviceDb, {
 			provider: "pg",
 			schema,

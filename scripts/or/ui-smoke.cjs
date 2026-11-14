@@ -5,7 +5,7 @@ const dir = process.argv[2];
   const ctx = await b.newContext({ viewport: { width: 1440, height: 1000 }, storageState: dir + '/state.json' });
   const p = await ctx.newPage();
   const errors = []; p.on('pageerror', e => errors.push(e.message));
-  const base = 'http://localhost:3000/app/org/default/brand/demo-kowhai-plumbing/online-reset';
+  const base = 'http://localhost:3000/app/org/default/brand/demo-kowhai-plumbing/ai-visibility';
   await p.goto(base, { waitUntil: 'networkidle' });
   await p.getByText('Buyer-Question Coverage').waitFor({ timeout: 60000 });
   await p.screenshot({ path: dir + '/02-visibility.png', fullPage: true });

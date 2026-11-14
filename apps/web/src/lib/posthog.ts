@@ -24,7 +24,7 @@ function send(call: (posthog: PostHog) => void): void {
 	else if (loading && allowed) queuedEvents.push(call);
 }
 
-// Online Reset: the API host is a required setting with no default; the
+// AI Solutions NZ: the API host is a required setting with no default; the
 // upstream project's proxy (var.elmohq.com) is gone.
 function load(apiKey: string, apiHost: string): Promise<void> {
 	loading ??= import("posthog-js").then(({ default: posthog }) => {

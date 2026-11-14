@@ -1,4 +1,4 @@
-// Online Reset: upstream Elmo sent CLI events and newsletter signups to its own
+// AI Solutions NZ: upstream Elmo sent CLI events and newsletter signups to its own
 // PostHog project with a hard-coded key. Both are removed; exports are kept.
 export async function trackCliEvent(
 	_configDir: string,

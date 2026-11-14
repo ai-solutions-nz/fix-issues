@@ -1,6 +1,6 @@
 // cosineSimilarity, clusterByCosine and pickClusterRepresentative are from
 // Canonry packages/contracts/src/embeddings.ts at f5d4612 (MIT, see
-// THIRD_PARTY_NOTICES.md). hashEmbedding is Online Reset's own.
+// THIRD_PARTY_NOTICES.md). hashEmbedding is AI Solutions NZ's own.
 
 export function cosineSimilarity(a: readonly number[], b: readonly number[]): number {
 	if (a.length === 0 || b.length === 0) throw new Error("cosineSimilarity: vectors must be non-empty");

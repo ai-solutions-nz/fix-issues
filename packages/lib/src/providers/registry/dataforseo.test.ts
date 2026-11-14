@@ -117,7 +117,7 @@ describe("dataforseo provider", () => {
 			search_results: [{ url: "https://example.com/not-cited", title: "Not cited" }],
 		};
 
-		it("asks DataForSEO from the buyer's NZ city when a location is set (Online Reset)", async () => {
+		it("asks DataForSEO from the buyer's NZ city when a location is set", async () => {
 			dataforseoClient.chatGptLlmScraperLiveAdvanced.mockResolvedValueOnce(scraperResponse(CHATGPT_SCRAPE));
 			const result = await dataforseo.run("chatgpt", "best plumber Christchurch", {
 				webSearch: true,

@@ -3,7 +3,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { serviceDb } from "./db";
 
-// Online Reset: syncing memberships from the identity provider is a system
+// AI Solutions NZ: syncing memberships from the identity provider is a system
 // operation (it adds memberships the request's tenant scope cannot see yet).
 const db = serviceDb;
 

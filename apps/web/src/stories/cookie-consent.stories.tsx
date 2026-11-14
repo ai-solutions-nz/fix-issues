@@ -1,5 +1,5 @@
 /**
- * Online Reset (Packets 2b and 2c): the consent banner and the footer's
+ * AI Solutions NZ (Packets 2b and 2c): the consent banner and the footer's
  * Cookie Preferences control. Neo's review asked for the empty-policy-link
  * banner (F1) and the whitelabel footer (F2) to be pinned by stories.
  */
@@ -35,7 +35,7 @@ export const BannerWithoutPolicyLink: StoryObj = {
 	play: async ({ canvasElement }) => {
 		const banner = await within(canvasElement).findByRole("region", { name: "Cookie consent" });
 		await expect(banner).toHaveTextContent("find Acme Visibility");
-		await expect(banner).not.toHaveTextContent(/Online Reset/);
+		await expect(banner).not.toHaveTextContent(/AI Solutions NZ/);
 		await expect(banner).not.toHaveTextContent(/advertising/i);
 		await expect(within(banner).queryByRole("link", { name: "Cookie Policy" })).toBeNull();
 		await expect(banner.querySelector('a[href=""]')).toBeNull();
@@ -50,7 +50,7 @@ export const BannerWithPolicyAndAdvertising: StoryObj = {
 			<CookieConsentBanner
 				consentRequired
 				policyHref="https://legal.example.com/legal/cookies"
-				appName="Online Reset"
+				appName="AI Solutions NZ"
 				mentionsAdvertising
 			/>
 		);

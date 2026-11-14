@@ -13,7 +13,7 @@ export interface PublishResult {
 	snapshot: Record<string, unknown> | null;
 }
 
-/** A client CMS that Online Reset can write to after approval. */
+/** A client CMS that AI Solutions NZ can write to after approval. */
 export interface PublishTarget {
 	kind: "wordpress" | "shopify";
 	publish(page: PublishablePage): Promise<PublishResult>;

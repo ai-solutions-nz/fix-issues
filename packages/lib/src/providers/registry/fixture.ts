@@ -2,7 +2,7 @@ import { readFileSync, statSync } from "node:fs";
 import type { Provider, ProviderOptions, ScrapeResult } from "../types";
 
 /**
- * Online Reset fixture provider: SIMULATED answers for local development and
+ * AI Solutions NZ fixture provider: SIMULATED answers for local development and
  * demos, never a live AI response. Runs it produces are stored with
  * collection_method = "fixture" and every screen labels them as simulated.
  *

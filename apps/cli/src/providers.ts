@@ -5,7 +5,7 @@ import pc from "picocolors";
 import type { EnvMap } from "./config.js";
 import { assertNotCancelled, link } from "./util.js";
 
-// Online Reset: plain sign-up pages. The upstream links carried the upstream
+// AI Solutions NZ: plain sign-up pages. The upstream links carried the upstream
 // project's affiliate ids; we have no affiliate arrangements.
 const CLORO_AFFILIATE = "https://cloro.dev";
 const BRIGHTDATA_AFFILIATE = "https://brightdata.com";
@@ -310,7 +310,7 @@ export async function finalizeScrapeTargets(
 	const deduped = dedupeTargets(targets);
 
 	if (!deduped) {
-		p.log.warn("No SCRAPE_TARGETS configured. Online Reset will not run scheduled checks until you set them.");
+		p.log.warn("No SCRAPE_TARGETS configured. AI Visibility will not run scheduled checks until you set them.");
 		if (PROVIDERS_DOCS_URL) p.log.info(`Reference: ${link(pc.cyan(PROVIDERS_DOCS_URL), PROVIDERS_DOCS_URL)}`);
 
 		const addManual = await p.confirm({

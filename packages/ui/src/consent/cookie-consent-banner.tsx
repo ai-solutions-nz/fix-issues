@@ -3,6 +3,7 @@ import {
 	ACCEPT_ALL,
 	CONSENT_OPEN_EVENT,
 	type CookieConsent,
+	maskToOffered,
 	REJECT_ALL,
 	readConsent,
 	resolveConsent,
@@ -72,8 +73,9 @@ export function CookieConsentBanner({
 
 	if (!open) return null;
 
+	// Every button goes through here, so "Save choices" is masked as well as "Accept".
 	function commit(consent: CookieConsent) {
-		saveConsent(consent);
+		saveConsent(maskToOffered(consent, { marketing: mentionsAdvertising }));
 		setOpen(false);
 		setExpanded(false);
 	}
@@ -87,7 +89,7 @@ export function CookieConsentBanner({
 				<p className="text-[13px] leading-relaxed">
 					We'd like to set {mentionsAdvertising ? "analytics and advertising" : "analytics"} cookies to see how people
 					find {appName}. Essential cookies are always on.
-					{/* Online Reset: no link until a Cookie Policy is published (brand-links.ts). */}
+					{/* AI Solutions NZ: no link until a Cookie Policy is published (brand-links.ts). */}
 					{policyHref && (
 						<>
 							{" "}
@@ -120,8 +122,7 @@ export function CookieConsentBanner({
 				<div className="mt-3.5 flex items-center gap-2">
 					<button
 						type="button"
-						// Accept grants only what was offered, so a later ad tag can't ride on it.
-						onClick={() => commit(mentionsAdvertising ? ACCEPT_ALL : { ...ACCEPT_ALL, marketing: false })}
+						onClick={() => commit(ACCEPT_ALL)}
 						className={`${buttonBase} bg-primary text-primary-foreground hover:bg-primary/90`}
 					>
 						Accept

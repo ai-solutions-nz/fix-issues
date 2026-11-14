@@ -20,7 +20,7 @@ export type Db = ReturnType<typeof createDb>;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 /**
- * Online Reset: while `withTenant` (./tenant.ts) runs, the shared `db` handle
+ * AI Solutions NZ: while `withTenant` (./tenant.ts) runs, the shared `db` handle
  * resolves to that tenant's transaction, which runs as the RLS-restricted
  * `or_tenant` role. Code that imports `db` therefore gets database-enforced
  * isolation without being rewritten.

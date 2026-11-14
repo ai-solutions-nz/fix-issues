@@ -93,7 +93,7 @@ jobs:
       - name: Unit tests
         run: pnpm turbo test
 
-      # Online Reset: the suites run as the app would in production, a
+      # AI Solutions NZ: the suites run as the app would in production, a
       # NOSUPERUSER, NOBYPASSRLS login that owns the database and whose only
       # role grant is membership of or_tenant. A superuser would pass the
       # isolation tests without proving the grants. Test-only password.

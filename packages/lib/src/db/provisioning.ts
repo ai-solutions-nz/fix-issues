@@ -2,7 +2,7 @@ import { count, eq } from "drizzle-orm";
 import { slugify } from "../app-urls";
 import { serviceDb } from "./db";
 
-// Online Reset: provisioning creates organizations and memberships, which no
+// AI Solutions NZ: provisioning creates organizations and memberships, which no
 // tenant may do, so it always runs on the system handle.
 const db = serviceDb;
 

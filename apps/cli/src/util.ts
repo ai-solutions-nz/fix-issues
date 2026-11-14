@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 import * as p from "@clack/prompts";
 
-// Online Reset: a plain wordmark in place of the upstream ASCII logo.
-const BANNER = ["", "  Online Reset", ""].join("\n");
+// AI Solutions NZ: a plain wordmark in place of the upstream ASCII logo.
+const BANNER = ["", "  AI Solutions NZ · AI Visibility", ""].join("\n");
 
 export function printBanner(): void {
 	// Tailwind's blue-600.

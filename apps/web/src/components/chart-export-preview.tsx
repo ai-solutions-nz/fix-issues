@@ -46,7 +46,7 @@ export function ChartExportPreview({
 }: ChartExportPreviewProps) {
 	const name = branding.name || DEFAULT_APP_NAME;
 	const isWhitelabel = branding.isWhitelabel && branding.name !== DEFAULT_APP_NAME;
-	// Online Reset: no public domain to print until one exists (brand-links.ts).
+	// AI Solutions NZ: no public domain to print until one exists (brand-links.ts).
 	const domain = isWhitelabel
 		? branding.parentUrl?.replace(/^https?:\/\//, "").replace(/\/$/, "") || ""
 		: PUBLIC_SITE_URL

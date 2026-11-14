@@ -1,7 +1,7 @@
 // Ported from limelit-co/open internal/mentions/mentions.go and phrase.go at
 // 53d178b62fc33bf23270aa4399f5f5ae4e5243bd.
 // Copyright 2026 Limelit. Licensed under the Apache License, Version 2.0
-// (see THIRD_PARTY_NOTICES.md). Modified for Online Reset: translated from Go
+// (see THIRD_PARTY_NOTICES.md). Modified for AI Solutions NZ: translated from Go
 // to TypeScript; offsets are UTF-16 string indices; brand ids are strings.
 //
 // Mentions are found by text search, not a model call, so a figure can be

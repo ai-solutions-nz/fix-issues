@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-// Online Reset (Packet 2b): the link contract once our sites exist.
+// AI Solutions NZ (Packet 2b): the link contract once our sites exist.
 // brand-links.ts ships empty; referrals.test.ts covers that state.
 vi.mock("./brand-links", () => ({
 	PUBLIC_SITE_URL: "https://www.example.com",

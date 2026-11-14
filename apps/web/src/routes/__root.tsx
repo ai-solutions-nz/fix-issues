@@ -4,7 +4,7 @@ import titanOneFont from "@fontsource/titan-one/files/titan-one-latin-400-normal
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts, useLocation } from "@tanstack/react-router";
-import { DEFAULT_APP_ICON, DEFAULT_APP_NAME, ELMO_THEME_COLOR } from "@workspace/config/constants";
+import { DEFAULT_APP_ICON, DEFAULT_APP_NAME, ELMO_THEME_COLOR, PRODUCT_LINE } from "@workspace/config/constants";
 import type { MissingEnvVar } from "@workspace/config/env";
 import { legalUrl } from "@workspace/config/legal";
 import type { DeploymentMode } from "@workspace/config/types";
@@ -65,10 +65,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 		const themeColor = hasCustomIcon ? "#000000" : ELMO_THEME_COLOR;
 		const appUrl = branding?.url ? branding.url.replace(/\/$/, "") : undefined;
 
-		const title = `${appName} - AI Search Optimization`;
+		const title = `${appName} - ${PRODUCT_LINE}`;
 		const description = "Track and optimize your brand's visibility across AI models.";
 		// Don't pass `title` to /api/og — the renderer already shows the brand
-		// (default wordmark or whitelabel icon + name), so a "Brand - AI Search Optimization"
+		// (default wordmark or whitelabel icon + name), so a "Brand - <product line>"
 		// title would render redundantly. Pages that override og:image can supply
 		// a page-specific title via the query param.
 		const ogImageParams = new URLSearchParams({ description });
@@ -152,7 +152,7 @@ function RootComponent() {
 	const posthogKey = clientConfig?.analytics?.posthogKey;
 	const posthogHost = clientConfig?.analytics?.posthogHost;
 	const mode = clientConfig?.mode;
-	// Online Reset (Packet 2b): local and whitelabel ask too once analytics is configured.
+	// AI Solutions NZ (Packet 2b): local and whitelabel ask too once analytics is configured.
 	const asksForConsent = asksForCookieConsent(mode, clientConfig?.analytics);
 	// Null until the browser resolves it — the time-zone fallback would read the
 	// server's own zone during SSR.

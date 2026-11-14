@@ -32,7 +32,7 @@ export const Install: Story = {
 		setMockLoaderData({ organization: { id: "org-1", name: "Acme", slug: "acme" } });
 		return <SkillPage />;
 	},
-	// Online Reset: the route refuses until a skill is published (brand-links.ts),
+	// AI Solutions NZ: the route refuses until a skill is published (brand-links.ts),
 	// and nothing it would render points at the upstream project.
 	play: async ({ canvasElement }) => {
 		const beforeLoad = (Route as unknown as { options: { beforeLoad: (args: unknown) => void } }).options.beforeLoad;

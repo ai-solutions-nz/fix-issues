@@ -531,7 +531,7 @@ function PlanCard({
 }
 
 function CustomPlanCallout() {
-	// Online Reset: no enquiries address yet (brand-links.ts), so no "talk to us" prompt.
+	// AI Solutions NZ: no enquiries address yet (brand-links.ts), so no "talk to us" prompt.
 	if (!PUBLIC_CONTACT_EMAIL) return null;
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed p-4">

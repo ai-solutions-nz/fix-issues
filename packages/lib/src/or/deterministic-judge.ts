@@ -24,7 +24,7 @@ function toMatchBrands(subject: MentionConfig["brand"], competitorId: string | n
 }
 
 /**
- * Online Reset's default judge: the Limelit text matcher (packages/or-core).
+ * AI Solutions NZ's default judge: the Limelit text matcher (packages/or-core).
  * It makes no network call and costs nothing, and the same stored text always
  * gives the same result. It does not judge sentiment (left undefined) and
  * reports a literal occurrence even in "I have no information about X".

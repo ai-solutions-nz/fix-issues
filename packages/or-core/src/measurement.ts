@@ -1,5 +1,5 @@
 /**
- * Online Reset measurement rules. Every stored run carries how it was
+ * AI Solutions NZ measurement rules. Every stored run carries how it was
  * collected, and no metric ever combines different collection methods:
  * a model API's answer is not what a person sees in the consumer app.
  */

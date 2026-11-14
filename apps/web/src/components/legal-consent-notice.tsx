@@ -8,7 +8,7 @@ import { cn } from "@workspace/ui/lib/utils";
  * The "by doing this you agree to…" line under a signup or checkout action.
  *
  * Hosted (cloud) only: a self-hosted instance creates no agreement with us, and
- * a whitelabel one runs under its operator's agreements. Online Reset: hidden
+ * a whitelabel one runs under its operator's agreements. AI Solutions NZ: hidden
  * until our own legal documents exist (brand-links.ts).
  */
 export function LegalConsentNotice({ action, className }: { action: string; className?: string }) {

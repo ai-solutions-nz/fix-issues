@@ -20,9 +20,9 @@ function openrouterHeaders(): Record<string, string> {
 	return {
 		Authorization: `Bearer ${getCredential("OPENROUTER_API_KEY")}`,
 		"Content-Type": "application/json",
-		// Online Reset: identifies this deployment to OpenRouter, never the upstream project.
+		// AI Solutions NZ: identifies this deployment to OpenRouter, never the upstream project.
 		...(process.env.APP_URL ? { "HTTP-Referer": process.env.APP_URL } : {}),
-		"X-Title": "Online Reset",
+		"X-Title": "AI Solutions NZ AI Visibility",
 	};
 }
 

@@ -42,7 +42,7 @@ export interface BrandAuditOptions {
 	audit?: (options: AuditOptions) => Promise<SiteAuditReport>;
 }
 
-/** Crawl the client's site and its competitors' sites once, run every Online Reset audit, and store the result. */
+/** Crawl the client's site and its competitors' sites once, run every AI Solutions NZ audit, and store the result. */
 export async function runBrandAudit(
 	conn: DbConnection,
 	brandId: string,

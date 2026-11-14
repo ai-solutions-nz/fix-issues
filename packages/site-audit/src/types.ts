@@ -2,8 +2,8 @@ import type { ParsedPage } from "./parse/html";
 
 export const REPORT_SCHEMA_VERSION = 1;
 
-/** Online Reset: no public page describes the bot yet (brand-links.ts), so the user agent carries no URL. */
-export const DEFAULT_USER_AGENT = "OnlineResetBot/1.0";
+/** AI Solutions NZ: no public page describes the bot yet (brand-links.ts), so the user agent carries no URL. */
+export const DEFAULT_USER_AGENT = "AISolutionsNZBot/1.0";
 
 export type CheckStatus = "pass" | "warn" | "fail" | "info" | "not_checked";
 
@@ -45,7 +45,7 @@ export interface SiteReport {
 	summary: { pass: number; warn: number; fail: number; notChecked: number };
 	/** The site refused the audit (robots.txt or repeated errors), so its unchecked results count as failures. */
 	blockedAudit: boolean;
-	/** Online Reset: the parsed pages, when `includeParsedPages` was set. */
+	/** AI Solutions NZ: the parsed pages, when `includeParsedPages` was set. */
 	parsedPages?: ParsedPage[];
 	/** 0–100: a pass counts fully, a warning half, a failure nothing. Optional (`info`) results don't count, nor do unchecked ones unless the site blocked the audit. Null when nothing was scored. */
 	score: number | null;
@@ -86,6 +86,6 @@ export interface AuditOptions {
 	onProgress?: (event: AuditProgress) => void;
 	/** Lets tests reach a local server. Never set this for user-supplied hosts. */
 	allowPrivateNetwork?: boolean;
-	/** Online Reset: return each site's parsed pages so further audits reuse this crawl. */
+	/** AI Solutions NZ: return each site's parsed pages so further audits reuse this crawl. */
 	includeParsedPages?: boolean;
 }

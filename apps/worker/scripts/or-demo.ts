@@ -1,5 +1,5 @@
 /**
- * Online Reset local demonstration (FICTIONAL business, SIMULATED answers).
+ * AI Solutions NZ local demonstration (FICTIONAL business, SIMULATED answers).
  *
  *   pnpm -C apps/worker or:demo -- --org default
  *
