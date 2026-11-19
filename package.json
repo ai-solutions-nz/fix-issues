@@ -31,10 +31,10 @@
     "license-check": "node scripts/check-licenses.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
-    "knip": "^6.44.1",
+    "@biomejs/biome": "2.6.7",
+    "knip": "^6.45.1",
     "tsx": "catalog:",
-    "turbo": "^2.11.10",
+    "turbo": "^2.11.11",
     "typescript": "catalog:"
   }
 }
