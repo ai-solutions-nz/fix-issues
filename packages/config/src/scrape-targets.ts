@@ -92,6 +92,9 @@ export const STATUS_TARGETS = [
 	"chatgpt:openai-api:gpt-6-luna:online",
 	"claude:anthropic-api:claude-haiku-5-5",
 	"claude:anthropic-api:claude-haiku-5-5:online",
+	// AI Solutions NZ: direct Gemini and Perplexity APIs (Packet 5).
+	"gemini:gemini-api:gemini-2.5-flash:online",
+	"perplexity:perplexity-api:sonar:online",
 	"claude:openrouter:anthropic/claude-haiku-5.5",
 	"claude:openrouter:anthropic/claude-haiku-5.5:online",
 	"chatgpt:openrouter:openai/gpt-6-luna",

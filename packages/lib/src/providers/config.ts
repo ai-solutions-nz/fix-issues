@@ -27,6 +27,8 @@ export const API_PROVIDER_MAX_OUTPUT_TOKENS: Record<string, number> = {
 	"openai-api": 8000,
 	openrouter: 8000,
 	"mistral-api": 8000,
+	"gemini-api": 8000,
+	"perplexity-api": 8000,
 };
 
 /** A clipped answer stores as a real-looking run, so log it (without failing) to tune the caps. */

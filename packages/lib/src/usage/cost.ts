@@ -14,6 +14,9 @@ const PROVIDER_COST_ESTIMATES_USD: Record<string, number> = {
 	"openai-api": 0.01,
 	"anthropic-api": 0.01,
 	"mistral-api": 0.005,
+	// AI Solutions NZ: coarse guesses for one grounded answer; check against the first invoices.
+	"gemini-api": 0.01,
+	"perplexity-api": 0.01,
 	openrouter: 0.005,
 	stub: 0,
 };

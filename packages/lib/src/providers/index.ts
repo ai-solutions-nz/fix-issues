@@ -4,11 +4,13 @@ import { brightdata } from "./registry/brightdata";
 import { cloro } from "./registry/cloro";
 import { dataforseo } from "./registry/dataforseo";
 import { fixture } from "./registry/fixture";
+import { geminiApi } from "./registry/gemini-api";
 import { mistralApi } from "./registry/mistral-api";
 import { olostep } from "./registry/olostep";
 import { openaiApi } from "./registry/openai-api";
 import { openrouter } from "./registry/openrouter";
 import { oxylabs } from "./registry/oxylabs";
+import { perplexityApi } from "./registry/perplexity-api";
 import { searchapi } from "./registry/searchapi";
 import { stub } from "./registry/stub";
 import type { ModelConfig, Provider, ProviderAccess } from "./types";
@@ -35,6 +37,9 @@ const providerMap: Record<string, Provider> = {
 	"openai-api": openaiApi,
 	"anthropic-api": anthropicApi,
 	"mistral-api": mistralApi,
+	// AI Solutions NZ: direct Gemini and Perplexity APIs (Packet 5).
+	"gemini-api": geminiApi,
+	"perplexity-api": perplexityApi,
 	dataforseo,
 	openrouter,
 	stub,

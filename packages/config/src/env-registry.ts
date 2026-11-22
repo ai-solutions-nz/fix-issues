@@ -136,6 +136,20 @@ export const ENV_REGISTRY: EnvVarSpec[] = [
 		description: "Mistral API key.",
 	},
 	{
+		name: "GEMINI_API_KEY",
+		scope: "server",
+		requiredBy: "dynamic-scrape-targets",
+		provider: "gemini-api",
+		description: "Google Gemini API key (Google AI Studio). Used by gemini:gemini-api targets.",
+	},
+	{
+		name: "PERPLEXITY_API_KEY",
+		scope: "server",
+		requiredBy: "dynamic-scrape-targets",
+		provider: "perplexity-api",
+		description: "Perplexity API key. Used by perplexity:perplexity-api targets.",
+	},
+	{
 		name: "SCRAPE_TARGETS",
 		scope: "server",
 		requiredBy: VALIDATED_MODES,

@@ -6,13 +6,13 @@ _Last updated: 2026-11-12. Current milestone: **5 (reporting and platform QA)**.
 
 ```bash
 pnpm install
-pnpm test                                    # 2,045 unit tests (8 packages)
+pnpm test                                    # 2,057 unit tests (8 packages)
 # Integration tests run as a non-superuser login (see "Database login for tenant isolation");
 # TEST_ADMIN_DATABASE_URL=postgres://postgres:postgres@localhost:5432/elmo_test also runs the role-check tests that create logins
 TEST_DATABASE_URL=postgres://or_app:or_app@localhost:5432/elmo_test \
   pnpm -C packages/lib test:integration      # 87 Postgres tests
 # same for apps/worker (34) and apps/web (174)
-pnpm lint                                    # Biome, 898 files, 0 errors
+pnpm lint                                    # Biome, 902 files, 0 errors
 DATABASE_URL=postgres://… pnpm -C apps/worker or:demo -- --org default   # Christchurch demo
 ```
 
@@ -110,11 +110,11 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
 
 ## Tests performed (latest run, all passing)
 
-- **Unit:** 2,045 (plus 192 Storybook tests).
-  - or-core 72, lib 830, web 777, config 158, cli 89, deployment 66, site-audit 38, worker 15.
+- **Unit:** 2,057 (plus 192 Storybook tests).
+  - or-core 72, lib 842, web 777, config 158, cli 89, deployment 66, site-audit 38, worker 15.
 - **Integration (Postgres 16):** 295, run as the non-superuser `or_app` login (member of `or_tenant` only, owner of the test database).
   - lib 87, worker 34, web 174. Web includes the strict 90-test isolation suite and 19 signed-in tests.
-- **Lint:** Biome over 898 files, 0 errors.
+- **Lint:** Biome over 902 files, 0 errors.
 - **Type checks:** all packages, including the NodeNext worker.
 - **Production build:** `vite build` succeeded.
 - **Browser smoke test** (local dev server) covered:
@@ -202,6 +202,23 @@ See `UPSTREAM.md` (commits and paths) and `THIRD_PARTY_NOTICES.md` (licences, pl
   - **Sentry CSP:** `*.sentry.io` is allowed in `connect-src` only when `VITE_SENTRY_DSN` is set.
   - **PostHog host:** `resolvePosthogHost` refuses any non-https host.
   - **Tests:** `apps/web/src/lib/__tests__/cookie-consent.test.ts` adds 3 tests (masking when not offered, masking when offered, version-1 answers asked again). The CSP and config suites add tests for the Sentry and https rules.
+- **Direct Gemini and Perplexity adapters (Packet 5).** All four engines can now run through their own official APIs, with web search on and no scraping.
+  - **`gemini-api`** (`packages/lib/src/providers/registry/gemini-api.ts`, key `GEMINI_API_KEY` from Google AI Studio):
+    - calls `generateContent` with Google Search grounding (`tools: [{ googleSearch: {} }]`), default model `gemini-2.5-flash`;
+    - stores the search queries Gemini ran and its sources (`groundingMetadata`);
+    - Gemini has no documented location parameter for Search grounding, so the buyer's city is added to the question text and the run records `location_applied = prompt_text`;
+    - grounding links are Google redirect URLs, so a source's domain is taken from its title, so citation analysis counts the real site.
+  - **`perplexity-api`** (`packages/lib/src/providers/registry/perplexity-api.ts`, key `PERPLEXITY_API_KEY`):
+    - calls Sonar chat completions, default model `sonar` (a target can pin `sonar-pro`);
+    - sends the buyer's city natively as `web_search_options.user_location` and records `native`;
+    - stores `search_results` (with titles), falling back to `citations`;
+    - Perplexity returns no search queries, so they are recorded as unavailable.
+  - **Field names** were checked against the official SDKs' type definitions (`@google/genai` 3.6.1, `@perplexity-ai/perplexity_ai` 0.43.1). Neither provider's docs site is reachable from the build environment. Neither SDK is a dependency; both adapters use plain `fetch`, like the Mistral one.
+  - **Not yet called live.** Tests use simulated responses. Confirm on the first live run that Gemini answers carry `groundingMetadata`, and that Perplexity honours `user_location`.
+  - **Wiring:** both providers are registered with output caps, cost estimates (coarse, to check against invoices), key registry entries, the settings page's per-engine provider suggestions and the fan-out support map.
+  - **Example targets:** `gemini:gemini-api:gemini-2.5-flash:online,perplexity:perplexity-api:sonar:online`. Note that onboarding research (brand suggestions) still needs one of OpenAI, Anthropic, OpenRouter or Mistral.
+  - **Not done:** `elmo init` does not offer the two new providers; set them in `.env` directly.
+  - **Tests:** `gemini-api.test.ts` (6) and `perplexity-api.test.ts` (6) cover the request shape, key header, city handling, recorded location method, errors and text/citation extraction.
 - **"Publish" uses the brand's first CMS connection.** There is no UI to add or manage CMS connections, edit the brand profile, invite client users or grant them brands. These are currently set up through the service functions or the demo script.
 - **The demo's mock WordPress stops when the demo exits.** Publishing from the UI afterwards fails, and the failure is recorded as `failed`, until a real or mock CMS is connected.
 - **Embeddings are lexical, not semantic.** Question clustering uses a free, deterministic hash embedding stored as `real[]`; pgvector and model embeddings are not wired. As a result, paraphrases that share no words are not merged.
@@ -529,7 +546,7 @@ packages/lib/src/secrets/store.ts:2:import { serviceDb as db } from "../db/db";
 
 | Need | Service | Status |
 |---|---|---|
-| Live AI answers (model APIs) | OpenAI, Anthropic, Gemini, Perplexity API keys | **Not activated.** No paid calls were made. Adapters for OpenAI and Anthropic (with NZ location) are tested at the request level only. |
+| Live AI answers (model APIs) | OpenAI, Anthropic, Gemini, Perplexity API keys | **Not activated.** No paid calls were made. Direct adapters exist for all four (`openai-api`, `anthropic-api`, `gemini-api`, `perplexity-api`), tested against simulated responses only. |
 | Consumer AI surfaces, AI Overviews/Mode, Copilot | DataForSEO or another vendor (decision D3) | Not activated. |
 | Keyword volume and rank tracking | DataForSEO | Adapter built; not called live. |
 | CMS publishing | Client WordPress Application Password or Shopify Admin token | Mock-tested only. |
@@ -539,13 +556,13 @@ The smallest valid live test, once approved, is 120 grounded API calls (10 quest
 
 ## Phase 2 gate (before any spend)
 
-None of these is done yet. All four must be met before any paid API call:
+All four must be met before any paid API call. The first two are built and tested offline (Packet 5) and need confirming on the first live run:
 
-- [ ] Gemini location handling confirmed and labelled. Gemini has no location parameter, so the location goes in the prompt text and runs record `location_applied = prompt_text`.
-- [ ] Every engine runs with web search on through its official API (`:online` targets on `openai-api`, `anthropic-api`, Gemini and Perplexity); no consumer-interface scraping.
+- [ ] Gemini location handling confirmed and labelled. Gemini has no location parameter, so the location goes in the prompt text and runs record `location_applied = prompt_text`. *Built in `gemini-api`; confirm live.*
+- [ ] Every engine runs with web search on through its official API (`:online` targets on `openai-api`, `anthropic-api`, `gemini-api` and `perplexity-api`); no consumer-interface scraping. *All four adapters exist; confirm live.*
 - [ ] The report shows the sample size and the spread across the 3 repeats for every metric.
 - [ ] The 10 paid-test questions are frozen in the repository (committed and versioned) before the test runs.
 
 ## Next implementation task
 
-The first item of the Phase 2 gate: implement and test Gemini's location handling, with runs labelled `location_applied = prompt_text`.
+The third Phase 2 gate item: show the sample size and the spread across the 3 repeats for every metric in the report. Then freeze the 10 test questions, and make the first capped live run to confirm the four adapters.

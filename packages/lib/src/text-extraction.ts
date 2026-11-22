@@ -143,6 +143,25 @@ export function extractTextFromMistral(rawOutput: any): string {
 	]);
 }
 
+/** AI Solutions NZ: Gemini API generateContent. Thought summaries (`thought: true`) are not the answer. */
+export function extractTextFromGeminiApi(rawOutput: any): string {
+	return firstText("No text content found in Gemini output.", [
+		() =>
+			joinText(
+				asArray(rawOutput?.candidates?.[0]?.content?.parts)
+					.filter((part: any) => !part?.thought)
+					.map((part: any) => part?.text),
+			),
+	]);
+}
+
+/** AI Solutions NZ: Perplexity Sonar chat completions. */
+export function extractTextFromPerplexityApi(rawOutput: any): string {
+	return firstText("No text content found in Perplexity output.", [
+		() => textOrNull(rawOutput?.choices?.[0]?.message?.content),
+	]);
+}
+
 export function extractTextFromOpenRouter(rawOutput: any): string {
 	return firstText("No text content found in OpenRouter output.", [
 		() => textOrNull(rawOutput?.choices?.[0]?.message?.content),
@@ -353,11 +372,13 @@ const EXTRACTION_FAILURE_SENTINELS: ReadonlySet<string> = new Set([
 	"No text content found in Cloro output.",
 	"No text content found in DataForSEO LLM output.",
 	"No text content found in DataForSEO Scraper output.",
+	"No text content found in Gemini output.",
 	"No text content found in Mistral output.",
 	"No text content found in Olostep output.",
 	"No text content found in OpenAI output.",
 	"No text content found in OpenRouter output.",
 	"No text content found in Oxylabs output.",
+	"No text content found in Perplexity output.",
 	"No text content found in SearchApi output.",
 	"Unknown provider format - cannot extract text content.",
 ]);
@@ -477,6 +498,40 @@ export function extractCitationsFromMistral(rawOutput: any): Citation[] {
 		for (const chunk of pluck(asArray(rawOutput?.outputs), "content")) {
 			if (chunk?.type === "tool_reference") add(chunk.url, chunk.title);
 		}
+	});
+}
+
+/** Gemini grounding links are Google redirects; the page's own domain is in the chunk's title. */
+const GEMINI_REDIRECT_HOST = "vertexaisearch.cloud.google.com";
+const HOSTNAME = /^(?!-)[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
+
+/**
+ * AI Solutions NZ: Gemini API `groundingMetadata.groundingChunks[].web`. When a
+ * link is a grounding redirect and the title is a bare hostname, the citation's
+ * domain is that hostname, so citation analysis counts the real site.
+ */
+export function extractCitationsFromGeminiApi(rawOutput: any): Citation[] {
+	const citations = collectCitations((add) => {
+		for (const chunk of asArray(rawOutput?.candidates?.[0]?.groundingMetadata?.groundingChunks)) {
+			add(chunk?.web?.uri, chunk?.web?.title);
+		}
+	});
+	return citations.map((citation) =>
+		citation.domain === GEMINI_REDIRECT_HOST && citation.title && HOSTNAME.test(citation.title)
+			? { ...citation, domain: citation.title.toLowerCase().replace(/^www\./, "") }
+			: citation,
+	);
+}
+
+/** AI Solutions NZ: Perplexity `search_results` (with titles), else the bare `citations` URL list. */
+export function extractCitationsFromPerplexityApi(rawOutput: any): Citation[] {
+	return collectCitations((add) => {
+		const results = asArray(rawOutput?.search_results);
+		if (results.length > 0) {
+			for (const result of results) add(result?.url, result?.title);
+			return;
+		}
+		for (const url of asArray(rawOutput?.citations)) add(url);
 	});
 }
 
@@ -623,6 +678,8 @@ const EXTRACTORS: Record<string, Extractor> = {
 	anthropic: ANTHROPIC,
 	claude: ANTHROPIC,
 	"mistral-api": { text: extractTextFromMistral, citations: extractCitationsFromMistral },
+	"gemini-api": { text: extractTextFromGeminiApi, citations: extractCitationsFromGeminiApi },
+	"perplexity-api": { text: extractTextFromPerplexityApi, citations: extractCitationsFromPerplexityApi },
 	dataforseo: DATAFORSEO,
 	google: DATAFORSEO,
 	"google-ai-mode": DATAFORSEO,

@@ -23,6 +23,9 @@ const FANOUT_SUPPORT: Record<string, FanoutSupport> = {
 	"chatgpt:oxylabs": discontinued("2026-09-29"),
 
 	"claude:anthropic-api": SUPPORTED,
+	// AI Solutions NZ: Gemini returns its grounding queries; Perplexity returns none.
+	"gemini:gemini-api": SUPPORTED,
+	"perplexity:perplexity-api": NEVER,
 
 	"copilot:cloro": SUPPORTED,
 	"copilot:brightdata": NEVER,
