@@ -13,7 +13,7 @@
 		"or:demo": "tsx scripts/or-demo.ts"
 	},
 	"dependencies": {
-		"@sentry/node": "^11.10.0",
+		"@sentry/node": "^11.16.0",
 		"@workspace/config": "workspace:*",
 		"@workspace/deployment": "workspace:*",
 		"@workspace/lib": "workspace:*",
